@@ -6,17 +6,6 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
-
-		<Authors>Michał Bryłka</Authors>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Copyright>Copyright (c) Michał Bryłka</Copyright>
-		<IsPackable>false</IsPackable>
-		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<PackageProjectUrl>https://github.com/nemesissoft/Nemesis.Demos</PackageProjectUrl>
-		<PackageTags>demo demos liveCode features</PackageTags>
-		<Description>Set of utils for showing coding and language/framework features in form of live demos</Description>
-
-
 		<!--<NoWarn>NU5105</NoWarn>-->
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
@@ -25,6 +14,34 @@
 		<DelaySign>false</DelaySign>
 		<PublicSign>true</PublicSign>
 		<AssemblyOriginatorKeyFile>..\Nemesis.Demos.Public.snk</AssemblyOriginatorKeyFile>
-	</PropertyGroup>	
 
+
+		<Authors>Michał Bryłka</Authors>
+		
+		<Copyright>Copyright (c) Michał Bryłka</Copyright>
+		<IsPackable>false</IsPackable>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<PackageProjectUrl>https://github.com/nemesissoft/Nemesis.Demos</PackageProjectUrl>
+		<PackageTags>demo demos liveCode features</PackageTags>
+		<Description>Set of utils for showing coding and language/framework features in form of live demos</Description>
+		
+		<!--this will be patched by build system-->
+		<PackageReleaseNotes>RELEASE_NOTES_PLACEHOLDER</PackageReleaseNotes>
+		
+		<EnablePackageValidation>true</EnablePackageValidation>
+		<!-- Optional: Detect breaking changes from a previous version -->
+		<!-- <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion> -->
+		
+		<PackageReadmeFile>properties\README.md</PackageReadmeFile>
+
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="properties">
+			<Link>Properties\README.md</Link>
+		</None>
+		<None Include="..\LICENSE" Pack="true" PackagePath=""/>
+	</ItemGroup>
+	
 </Project>
