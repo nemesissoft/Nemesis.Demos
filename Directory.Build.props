@@ -24,9 +24,7 @@
 		<PackageProjectUrl>https://github.com/nemesissoft/Nemesis.Demos</PackageProjectUrl>
 		<PackageTags>demo demos liveCode features</PackageTags>
 		<Description>Set of utils for showing coding and language/framework features in form of live demos</Description>
-		
-		<!--this will be patched by build system-->
-		<PackageReleaseNotes>RELEASE_NOTES_PLACEHOLDER</PackageReleaseNotes>
+				
 		
 		<EnablePackageValidation>true</EnablePackageValidation>
 		<!-- Optional: Detect breaking changes from a previous version -->
