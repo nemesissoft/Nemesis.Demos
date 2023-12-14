@@ -97,7 +97,8 @@ public static class Extensions
             where TNumber : IBinaryInteger<TNumber>, IFormattable
     {
         Dump(
-            string.Join(", ", source.ToArray().Select(b => b.ToString("B8", CultureInfo.InvariantCulture)))
+            string.Join(", ", source.ToArray().Select(b => b.ToString("B8", CultureInfo.InvariantCulture))),
+            prepend
             );
         return source;
     }
@@ -120,7 +121,16 @@ public static class Extensions
         var decompiler = new CSharpDecompiler(path, new DecompilerSettings(LanguageVersion.Latest));
 
         var typeInfo = decompiler.TypeSystem.FindType(fullTypeName).GetDefinition()!;
-        var methodToken = typeInfo.Methods.First(m => m.Name == method.Name).MetadataToken;
+        var @params = method.GetParameters();
+
+        var methodToken = typeInfo.Methods.First(m =>
+            m.Name == method.Name &&
+            m.ReturnType.FullName == method.ReturnType.FullName &&
+            m.Parameters.Count == @params.Length &&
+            m.Parameters.Zip(@params)
+                .Select(t => t.First.Type.FullName == t.Second.ParameterType.FullName)
+                .All(b => b == true)
+        ).MetadataToken;
 
         var source = decompiler.DecompileAsString(methodToken);
 
