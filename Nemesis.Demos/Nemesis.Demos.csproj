@@ -1,9 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>		
 		<IsPackable>true</IsPackable>
-
-		<!--this will be patched by build system-->
-		<PackageReleaseNotes>RELEASE_NOTES_PLACEHOLDER</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">

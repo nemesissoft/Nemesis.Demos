@@ -35,7 +35,7 @@ jobs:
       uses: actions/setup-dotnet@v3
          
 
-    - name: Update release notes
+    - name: Release Pack (update release notes)
       if: github.event_name == 'release' 
       env:
         RELEASE_NAME: ${{ github.event.release.name }}
@@ -43,32 +43,24 @@ jobs:
       run: |   
         $name = $env:RELEASE_NAME
         $body = $env:RELEASE_BODY
-        if($body -or $name){
-            $releaseNotes = "# Release ${{ github.event.release.tag_name }}" 
-            if($name){
-                $releaseNotes = $releaseNotes + " - "  + $name
-            }
-            if($body){
-                $releaseNotes = $releaseNotes + "`r`n`r`n"  + $body
-            }
+        $releaseNotes = "# Release ${{ github.event.release.tag_name }}" 
+                
+        if($name){
+            $releaseNotes = $releaseNotes + " - "  + $name
+        }
+        if($body){
+            $releaseNotes = $releaseNotes + "`r`n`r`n"  + $body
+        }
             
-            foreach($csProjFileName in (Get-ChildItem "${{ github.workspace }}" -Recurse -Include *.csproj)) {
-                Write-Host "Found project file '$csProjFileName'"
-                $csProjDoc = [xml](Get-Content $csProjFileName)
-                $releaseNotesNode = $csProjDoc.SelectSingleNode("Project/PropertyGroup/PackageReleaseNotes")
+        Write-Host "`tSetting release notes to '$releaseNotes'"
 
-                if($releaseNotesNode.InnerText -clike "RELEASE_NOTES_PLACEHOLDER*") 
-                {
-                    Write-Host "`tPATCHING '$csProjFileName' with new release notes"
-                    $releaseNotesNode.InnerText = "$releaseNotes"
-                    $csProjDoc.Save($csProjFileName)
-                }
-            }
-        }    
+        dotnet pack --configuration Release --output ${{ env.NuGetDirectory }} -p:PackageReleaseNotes=$releaseNotes
 
-    # Create the NuGet package in the folder from the environment variable NuGetDirectory
-    - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}
-        
+    
+    - name: Non-release Pack 
+      if: github.event_name != 'release'
+      run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}
+          
     - uses: actions/upload-artifact@v3
       with:
         name: nuget

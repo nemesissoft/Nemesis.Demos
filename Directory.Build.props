@@ -18,7 +18,7 @@
 
 		<Authors>Michał Bryłka</Authors>
 		
-		<Copyright>Copyright (c) Michał Bryłka</Copyright>
+		<Copyright>Copyright © Michał Bryłka</Copyright>
 		<IsPackable>false</IsPackable>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<PackageProjectUrl>https://github.com/nemesissoft/Nemesis.Demos</PackageProjectUrl>
