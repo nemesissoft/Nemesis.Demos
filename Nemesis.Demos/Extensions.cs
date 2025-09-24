@@ -22,7 +22,7 @@ public static class Extensions
         //p⇒q ⟺ ¬(p ∧ ¬q)
         catch (TException e) when (!string.IsNullOrEmpty(errorMessagePart) && e.ToString().Contains(errorMessagePart, StringComparison.OrdinalIgnoreCase))
         {
-            var lines = e.Message.Split(new[] { Environment.NewLine, "\n", "\r" }, StringSplitOptions.None)
+            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
                 .Select(s => $"    {s}");
 
             using (Terminal.ForeColor(ConsoleColor.Magenta))
@@ -30,7 +30,7 @@ public static class Extensions
         }
         catch (TException e)
         {
-            var lines = e.Message.Split(new[] { Environment.NewLine, "\n", "\r" }, StringSplitOptions.None)
+            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
                 .Select(s => $"    {s}");
 
             using (Terminal.ForeColor(ConsoleColor.DarkGreen))
@@ -113,6 +113,9 @@ public static class Extensions
         }
     }
 
+    public static SyntaxTheme Theme { get; internal set; } = SyntaxTheme.VisualStudioDark;
+    
+
     public static string DecompileAsCSharp(MethodInfo method)
     {
         var path = Assembly.GetCallingAssembly().Location;
@@ -136,7 +139,7 @@ public static class Extensions
 
         try
         {
-            SyntaxHighlighter.Highlight(source);
+            SyntaxHighlighter.Highlight(source, Theme);
         }
         catch (Exception)
         {
@@ -145,7 +148,7 @@ public static class Extensions
 
         return source;
     }
-
+    
     public static string DecompileAsCSharp(Type type)
     {
         var path = Assembly.GetCallingAssembly().Location;
@@ -157,7 +160,7 @@ public static class Extensions
 
         try
         {
-            SyntaxHighlighter.Highlight(source);
+            SyntaxHighlighter.Highlight(source, Theme);
         }
         catch (Exception)
         {

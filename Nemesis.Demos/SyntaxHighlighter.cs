@@ -7,10 +7,8 @@ namespace Nemesis.Demos;
 
 public static class SyntaxHighlighter
 {
-    public static void Highlight(string code, SyntaxTheme? theme =null)
+    public static void Highlight(string code, SyntaxTheme theme)
     {
-        theme ??= SyntaxTheme.Dracula;
-
         var tree = CSharpSyntaxTree.ParseText(code);
         var root = tree.GetRoot();
 
@@ -80,31 +78,83 @@ public static class SyntaxHighlighter
 
 public record SyntaxTheme(string Keyword, string Type, string String, string Number, string Comment, string PlainText)
 {
-
     public static SyntaxTheme Dracula => new(
-        "pink1 bold",
-        "deepskyblue1",
-        "yellow1",
-        "mediumorchid1",
-        "grey50",
-        "white"
-    );
+      Keyword: "pink1 bold",
+      Type: "deepskyblue1",
+      String: "yellow1",
+      Number: "mediumorchid1",
+      Comment: "grey50",
+      PlainText: "white");
 
-    public static SyntaxTheme Solarized => new(
-        "green1 bold",
-        "yellow1",
-        "cyan1",
-        "magenta1",
-        "grey50",
-        "white"
-    );
+    public static SyntaxTheme SolarizedDark => new(
+        Keyword: "green1 bold",
+        Type: "cyan1",
+        String: "yellow1",
+        Number: "magenta1",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme SolarizedLight => new(
+        Keyword: "blue bold",
+        Type: "red1",
+        String: "green1",
+        Number: "magenta1",
+        Comment: "grey30",
+        PlainText: "black");
 
     public static SyntaxTheme Monokai => new(
-        "red1 bold",
-        "deepskyblue1",
-        "yellow1",
-        "mediumorchid1",
-        "grey50",
-        "white"
-    );
+        Keyword: "red1 bold",
+        Type: "deepskyblue1",
+        String: "yellow1",
+        Number: "mediumorchid1",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme GitHubLight => new(
+        Keyword: "blue bold",
+        Type: "darkorange",
+        String: "green3",
+        Number: "purple",
+        Comment: "grey50",
+        PlainText: "black");
+
+    public static SyntaxTheme GitHubDark => new(
+        Keyword: "cyan1 bold",
+        Type: "yellow1",
+        String: "green3",
+        Number: "mediumorchid1",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme VisualStudioDark => new(
+        Keyword: "blue bold",
+        Type: "teal",
+        String: "lightgreen",
+        Number: "lightcoral",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme VisualStudioLight => new(
+        Keyword: "blue bold",
+        Type: "darkcyan",
+        String: "darkgreen",
+        Number: "darkmagenta",
+        Comment: "grey50",
+        PlainText: "black");
+
+    public static SyntaxTheme RiderDark => new(
+        Keyword: "magenta bold",
+        Type: "deepskyblue1",
+        String: "yellow1",
+        Number: "orchid1",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme RiderLight => new(
+        Keyword: "darkmagenta bold",
+        Type: "blue",
+        String: "darkgreen",
+        Number: "darkorange",
+        Comment: "grey50",
+        PlainText: "black");
 }

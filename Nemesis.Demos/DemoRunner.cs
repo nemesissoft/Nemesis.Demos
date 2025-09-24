@@ -1,4 +1,6 @@
-﻿namespace Nemesis.Demos;
+﻿using Spectre.Console;
+
+namespace Nemesis.Demos;
 public class DemoRunner
 {
     public static void Run(string[]? args = null)
@@ -18,6 +20,7 @@ public class DemoRunner
             .OrderBy(tuple => tuple.Order)
             .ToList().AsReadOnly();
 
+
         int choice = -1;
         while (true)
         {
@@ -26,13 +29,14 @@ public class DemoRunner
             for (int i = 0; i < showables.Count; i++)
                 Console.WriteLine($"{(i + 1).ToString().PadLeft(pad + 1)}. {showables[i].Name}");
 
-            using (Terminal.ForeColor(ConsoleColor.Blue))
+            using (Terminal.ForeColor(ConsoleColor.DarkGreen))
                 Console.Write($"{Environment.NewLine}Select demo: ");
             var text = Console.ReadLine();
             if (string.Equals("EXIT", text, StringComparison.OrdinalIgnoreCase))
                 break;
-
-            if (int.TryParse(text, out choice) && choice >= 1 && choice <= showables.Count)
+            else if (string.Equals("CLEAR", text, StringComparison.OrdinalIgnoreCase) || string.Equals("CLS", text, StringComparison.OrdinalIgnoreCase))
+                AnsiConsole.Clear();
+            else if (int.TryParse(text, out choice) && choice >= 1 && choice <= showables.Count)
                 try
                 {
                     showables[choice - 1].Instance.Show();
@@ -41,7 +45,7 @@ public class DemoRunner
                 {
                     using var _ = Terminal.ForeColor(ConsoleColor.Red);
 
-                    var lines = e.ToString().Split(new[] { Environment.NewLine, "\n", "\r" }, StringSplitOptions.None)
+                    var lines = e.ToString().Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
                         .Select(s => $"    {s}");
 
                     Console.WriteLine("ERROR:" + Environment.NewLine + string.Join(Environment.NewLine, lines));

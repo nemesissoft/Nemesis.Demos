@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<Version>0.0.1</Version><!--This will get replaced by Build system -->
 		<TargetFrameworks>net8.0</TargetFrameworks>
-		<LangVersion>12.0</LangVersion>
+		<LangVersion>13.0</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
