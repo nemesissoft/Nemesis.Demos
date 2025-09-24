@@ -136,7 +136,7 @@ public static class Extensions
 
         try
         {
-            HighlightSource(source);
+            SyntaxHighlighter.Highlight(source);
         }
         catch (Exception)
         {
@@ -157,7 +157,7 @@ public static class Extensions
 
         try
         {
-            HighlightSource(source);
+            SyntaxHighlighter.Highlight(source);
         }
         catch (Exception)
         {
@@ -165,20 +165,5 @@ public static class Extensions
         }
 
         return source;
-    }
-
-    //before: pip install Pygments
-    private static void HighlightSource(string source)
-    {
-        var outputFile = Path.GetTempFileName();
-        File.WriteAllText(outputFile, source, Encoding.UTF8);
-
-        var info = new ProcessStartInfo("pygmentize", ["-l", "csharp", "-O", "style=material", "-f", "terminal16m", Path.GetFileName(outputFile)])
-        {
-            WorkingDirectory = Path.GetDirectoryName(outputFile)
-        };
-        using var process = Process.Start(info);
-        process?.WaitForExit();
-        File.Delete(outputFile);
     }
 }
