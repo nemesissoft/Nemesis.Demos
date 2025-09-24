@@ -1,19 +1,17 @@
-﻿using static Nemesis.Demos.Extensions;
-
-namespace Net8.Features;
+﻿namespace Tester;
 
 [Order(1)]
-internal class PrimaryConstructors : IShowable
+internal class PrimaryConstructors(Decompiler decompiler) : IRunnable
 {
-    public void Show()
+    public void Run()
     {
         new Person("Mike", "Oldfield", new("UK", "London")).Dump();
 
-        DecompileAsCSharp(typeof(Person));
+        decompiler.DecompileAsCSharp(typeof(Person));
     }
 }
 
-file class Person(string name/*0. not exposed outside*/, string familyName, Address address)
+class Person(string name/*0. not exposed outside*/, string familyName, Address address)
 {
     public string Name => name; //1. Property 1
     public string FamilyName { get; } = familyName; //2. Property 2
@@ -23,14 +21,14 @@ file class Person(string name/*0. not exposed outside*/, string familyName, Addr
     public void Greet() => Console.WriteLine($"Hello, {name}!");
 }
 
-file class Address(string country, string city)
+class Address(string country, string city)
 {
     public string Country { get; } = country;
     public string City { get; } = city;
 }
 
-file class Developer(string name, string familyName, float salary)
-    : Person(name, familyName, new Address("", ""))
+class Developer(string name, string familyName, float salary)
+   : Person(name, familyName, new Address("", ""))
 {
     public float Salary { get; } = salary;
 
@@ -46,7 +44,7 @@ file class Developer(string name, string familyName, float salary)
 }
 
 //4. decompile
-file class Test(int value)
+class Test(int value)
 {
     public int Value => value;
 }

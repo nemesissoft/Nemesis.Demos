@@ -1,18 +1,16 @@
 ﻿namespace Nemesis.Demos;
 
-public static class Terminal
+public static class ConsoleColors
 {
-    public static IDisposable ForeColor(ConsoleColor color) =>
-        new ForeColorStruct(color);
+    public static IDisposable ForeColor(ConsoleColor color) => new ForeColorStruct(color);
 
-    public static IDisposable BackColor(ConsoleColor color) =>
-        new BackColorStruct(color);
+    public static IDisposable BackColor(ConsoleColor color) => new BackColorStruct(color);
 
-    readonly struct ForeColorStruct : IDisposable
+    private readonly struct ForeColorStruct : IDisposable
     {
         private readonly ConsoleColor _previousColor;
 
-        public ForeColorStruct(ConsoleColor foreColor)
+        internal ForeColorStruct(ConsoleColor foreColor)
         {
             _previousColor = Console.ForegroundColor;
             Console.ForegroundColor = foreColor;
@@ -21,11 +19,11 @@ public static class Terminal
         public void Dispose() => Console.ForegroundColor = _previousColor;
     }
 
-    readonly struct BackColorStruct : IDisposable
+    private readonly struct BackColorStruct : IDisposable
     {
         private readonly ConsoleColor _previousColor;
 
-        public BackColorStruct(ConsoleColor foreColor)
+        internal BackColorStruct(ConsoleColor foreColor)
         {
             _previousColor = Console.BackgroundColor;
             Console.BackgroundColor = foreColor;

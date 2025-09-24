@@ -1,4 +1,9 @@
-﻿namespace Nemesis.Demos;
+﻿using Microsoft.CodeAnalysis;
+using ICSharpCode.Decompiler.CSharp;
+using Spectre.Console;
+using System.Text;
+
+namespace Nemesis.Demos;
 public class DemoRunner
 {
     public static void Run(string[]? args = null)
@@ -6,57 +11,275 @@ public class DemoRunner
         if (args is not null)
             Extensions.CheckDebugger(args);
 
-        var showables =
+        DemosOptions demosOptions = new();
+        Decompiler decompiler = new(demosOptions);
+
+        IEnumerable<IRunnable> demos =
             Assembly.GetCallingAssembly().GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsGenericTypeDefinition && typeof(IShowable).IsAssignableFrom(t))
+            .Where(t => !t.IsAbstract && !t.IsGenericTypeDefinition && typeof(IRunnable).IsAssignableFrom(t))
             .Select(t => (
-                Instance: (IShowable)Activator.CreateInstance(t)!,
-                Order: t.GetCustomAttribute<OrderAttribute>()?.Value ?? int.MaxValue,
-                t.Name
+                Instance: CreateRunnable(t, decompiler),
+                Order: t.GetCustomAttribute<OrderAttribute>()?.Value ?? int.MaxValue
                 )
             )
             .OrderBy(tuple => tuple.Order)
-            .ToList().AsReadOnly();
+            .Select(t => t.Instance)
+            .ToList();
 
-        int choice = -1;
+        IEnumerable<IRunnable> builtInActions = [new ClearAction(), new ChangeThemeAction(demosOptions), new ChangeLanguageVersionAction(demosOptions), new ExitAction()];
+
+
+        var prompt =
+            new SelectionPrompt<IRunnable>()
+                .PageSize(25)
+                .UseConverter(s => s.Description)
+                .AddChoiceGroup(new NoOpAction("Demos"), demos)
+                .AddChoiceGroup(new NoOpAction("Built in"), builtInActions)
+                .EnableSearch()
+            ;
+
         while (true)
         {
-            int pad = (int)Math.Ceiling(Math.Log10(showables.Count + 1));
+            var choice = AnsiConsole.Prompt(prompt);
 
-            for (int i = 0; i < showables.Count; i++)
-                Console.WriteLine($"{(i + 1).ToString().PadLeft(pad + 1)}. {showables[i].Name}");
+            try
+            {
+                choice.Run();
+            }
+            catch (Exception e)
+            {
+                AnsiConsole.WriteException(e, ExceptionFormats.ShortenPaths | ExceptionFormats.ShortenTypes | ExceptionFormats.ShortenMethods);
+            }
 
-            using (Terminal.ForeColor(ConsoleColor.Blue))
-                Console.Write($"{Environment.NewLine}Select demo: ");
-            var text = Console.ReadLine();
-            if (string.Equals("EXIT", text, StringComparison.OrdinalIgnoreCase))
-                break;
+        }
+    }
 
-            if (int.TryParse(text, out choice) && choice >= 1 && choice <= showables.Count)
-                try
+    private static IRunnable CreateRunnable(Type type, Decompiler decompiler)
+    {
+        var ctors = type.GetConstructors();
+        if (ctors.Length != 1)
+            throw new NotSupportedException($"Only single public constructor is supported by {type.Name}");
+        var ctor = ctors[0];
+
+        var ctorParams = ctor.GetParameters();
+        return ctorParams.Length switch
+        {
+            0 => (IRunnable)Activator.CreateInstance(type)!,
+            1 => ctorParams[0].ParameterType == typeof(Decompiler)
+                ? (IRunnable)ctor.Invoke([decompiler])
+                : throw new NotSupportedException($"Only parameter of type Decompiler is supported for constructor of arity 1 in {type.Name}"),
+            _ => throw new NotSupportedException($"Only constructor of arity 0..1 is supported by {type.Name}")
+        };
+    }
+}
+
+public interface IRunnable
+{
+    void Run();
+
+    string Description => GetType().Name;
+}
+
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class OrderAttribute(int value) : Attribute { public int Value => value; }
+
+record NoOpAction(string Description) : IRunnable { public void Run() { } }
+
+class ClearAction : IRunnable
+{
+    public void Run() => AnsiConsole.Clear();
+
+    public string Description => "Clear";
+}
+
+record ChangeThemeAction(DemosOptions Options) : IRunnable
+{
+    public string Description => "Change theme";
+
+    const string DEMO_CODE = """
+            using System;
+
+            // This is a single-line comment.
+            public class TokenExample
+            {
+                // Define a constant number
+                private const Int32 MaxCount = 100;
+
+                /*
+                This is a multi-line comment, demonstrating 
+                comments that span multiple lines.
+                */
+                public void RunExample()
                 {
-                    showables[choice - 1].Instance.Show();
+                    string name = "Spectre.Console"; // String literal
+                    int count = MaxCount + 5;        // Number literal
+
+                    if (count > 100)
+                    {
+                        Console.WriteLine(name);
+                    }
                 }
-                catch (Exception e)
+            }
+            """;
+
+    public void Run()
+    {
+        SyntaxNode parsedCode = SyntaxHighlighter.GetParsedCodeRoot(DEMO_CODE);
+
+        AnsiConsole.Clear();
+
+        var state = new SelectionState<ThemeMeta>(
+            SyntaxTheme.All.Select(t => new ThemeMeta(t.Name, t.Theme, IsCurrent: Equals(Options.Theme, t.Theme))).ToList()
+            );
+        var console = AnsiConsole.Console;
+
+        bool isDone = false;
+
+        AnsiConsole.Live(CreateLayout(state, parsedCode))
+            .Start(ctx =>
+            {
+                ctx.UpdateTarget(CreateLayout(state, parsedCode));
+
+                while (!isDone)
                 {
-                    using var _ = Terminal.ForeColor(ConsoleColor.Red);
+                    var key = console.Input.ReadKey(intercept: true);
 
-                    var lines = e.ToString().Split(new[] { Environment.NewLine, "\n", "\r" }, StringSplitOptions.None)
-                        .Select(s => $"    {s}");
+                    // If the terminal doesn't support reading keys, or the key is null, we break (or continue)
+                    if (!key.HasValue)
+                    {
+                        Thread.Sleep(50); // Prevent burning CPU if ReadKey somehow returns null rapidly
+                        continue;
+                    }
+                    else
+                    {
+                        bool selectionChanged = false;
 
-                    Console.WriteLine("ERROR:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
+                        switch (key.Value.Key)
+                        {
+                            case ConsoleKey.UpArrow:
+                                selectionChanged = state.TryGoUpIfPossible();
+                                break;
+
+                            case ConsoleKey.DownArrow:
+                                selectionChanged = state.TryGoDownIfPossible();
+                                break;
+
+                            case ConsoleKey.Enter:
+                                isDone = true;
+                                break;
+                        }
+
+                        if (selectionChanged)
+                            ctx.UpdateTarget(CreateLayout(state, parsedCode));
+                    }
                 }
+            });
+                
+        Options.Theme = state.SelectedOption.Theme;
+        AnsiConsole.Clear();
+        AnsiConsole.MarkupLine($"[yellow]Theme changed to {state.SelectedOption.Name}![/]");
+    }
+
+    private static Layout CreateLayout(SelectionState<ThemeMeta> state, SyntaxNode parsedCode) =>
+        new Layout("Root")
+            .SplitColumns(
+                new Layout("SelectionPanel").Size(30).Update(CreateSelectionPanel(state)),
+                new Layout("DetailPanel").Update(CreateDetailPanel(state, parsedCode))
+            );
+
+    private static Panel CreateSelectionPanel(SelectionState<ThemeMeta> state)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("[yellow]Use [green]Up[/] and [green]Down[/] to select, [green]Enter[/] to confirm.[/]");
+        sb.AppendLine();
+
+        for (int i = 0; i < state.Options.Count; i++)
+        {
+            var meta = state.Options[i];
+            string text = meta.IsCurrent ? $"{meta.Name} **" : meta.Name;
+
+            if (i == state.SelectedIndex)
+                sb.AppendLine($"[black on blue]> {text} <[/]"); // Highlight the selected option
+            else
+                sb.AppendLine($"  {text}");
+        }
+
+        var selectionContent = new Markup(sb.ToString());
+
+        return new Panel(selectionContent)
+            .Header("[bold white]Themes[/]")
+            .Expand();
+    }
+
+    private static Panel CreateDetailPanel(SelectionState<ThemeMeta> state, SyntaxNode parsedCode)
+    {
+        var markup = new SyntaxHighlighter(state.SelectedOption.Theme).GetHighlightedMarkup(parsedCode);
+
+        return new Panel(new Markup(markup))
+            .Header("[bold white]Preview[/]")
+            .Expand();
+    }
+
+    private record ThemeMeta(string Name, SyntaxTheme Theme, bool IsCurrent);
+
+    private class SelectionState<T>(IReadOnlyList<T> options)
+    {
+        public int SelectedIndex { get; private set; } = 0;
+        public IReadOnlyList<T> Options { get; } = options;
+        public T SelectedOption => Options[SelectedIndex];
+
+        public bool TryGoUpIfPossible()
+        {
+            if (SelectedIndex > 0)
+            {
+                SelectedIndex--;
+                return true;
+            }
+            return false;
+        }
+
+        public bool TryGoDownIfPossible()
+        {
+            if (SelectedIndex < Options.Count - 1)
+            {
+                SelectedIndex++;
+                return true;
+            }
+            return false;
         }
     }
 }
 
-public interface IShowable
+record ChangeLanguageVersionAction(DemosOptions Options) : IRunnable
 {
-    void Show();
+    public void Run()
+    {
+        var (selectedVersion, _) = AnsiConsole.Prompt(
+            new SelectionPrompt<(LanguageVersion Version, bool IsCurrent)>()
+                .Title("[green]Select a language version:[/]")
+                .PageSize(20)
+                .AddChoices(
+                    Enum.GetValues<LanguageVersion>().Select(lv => (Version: lv, IsCurrent: Equals(Options.LanguageVersion, lv)))
+                )
+                .UseConverter(t => t.IsCurrent ? $"[green]{t.Version} **[/]" : t.Version.ToString())
+                .EnableSearch()
+        );
+
+        Options.LanguageVersion = selectedVersion;
+        AnsiConsole.MarkupLine($"[yellow]Language version changed to {selectedVersion}![/]");
+    }
+
+    public string Description => "Change decompiler language version";
 }
 
-[AttributeUsage(AttributeTargets.Class)]
-public sealed class OrderAttribute(int value) : Attribute
+class ExitAction : IRunnable
 {
-    public int Value => value;
+    public void Run()
+    {
+        if (AnsiConsole.Confirm("[red]Are you sure you want to quit?[/]"))
+            Environment.Exit(0);
+    }
+
+    public string Description => "Exit";
 }

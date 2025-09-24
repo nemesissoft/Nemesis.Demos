@@ -1,7 +1,4 @@
 ﻿using System.Text;
-using ICSharpCode.Decompiler;
-using ICSharpCode.Decompiler.CSharp;
-using ICSharpCode.Decompiler.TypeSystem;
 using Nemesis.TextParsers;
 
 namespace Nemesis.Demos;
@@ -16,29 +13,29 @@ public static class Extensions
         try
         {
             action();
-            using (Terminal.ForeColor(ConsoleColor.DarkRed))
+            using (ConsoleColors.ForeColor(ConsoleColor.DarkRed))
                 Console.WriteLine($"Expected exception '{typeof(TException)}' not captured");
         }
         //p⇒q ⟺ ¬(p ∧ ¬q)
         catch (TException e) when (!string.IsNullOrEmpty(errorMessagePart) && e.ToString().Contains(errorMessagePart, StringComparison.OrdinalIgnoreCase))
         {
-            var lines = e.Message.Split(new[] { Environment.NewLine, "\n", "\r" }, StringSplitOptions.None)
+            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
                 .Select(s => $"    {s}");
 
-            using (Terminal.ForeColor(ConsoleColor.Magenta))
+            using (ConsoleColors.ForeColor(ConsoleColor.Magenta))
                 Console.WriteLine($"EXPECTED with message for {actionText}:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
         }
         catch (TException e)
         {
-            var lines = e.Message.Split(new[] { Environment.NewLine, "\n", "\r" }, StringSplitOptions.None)
+            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
                 .Select(s => $"    {s}");
 
-            using (Terminal.ForeColor(ConsoleColor.DarkGreen))
+            using (ConsoleColors.ForeColor(ConsoleColor.DarkGreen))
                 Console.WriteLine($"EXPECTED for {actionText}:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
         }
         catch (Exception e)
         {
-            using (Terminal.ForeColor(ConsoleColor.DarkRed))
+            using (ConsoleColors.ForeColor(ConsoleColor.DarkRed))
                 Console.WriteLine($"Failed to capture error for '{actionText}' containing '{errorMessagePart}' instead error was {e.GetType().FullName}: {e}");
         }
     }
@@ -111,59 +108,5 @@ public static class Extensions
         {
             Debugger.Launch();
         }
-    }
-
-    public static string DecompileAsCSharp(MethodInfo method)
-    {
-        var path = Assembly.GetCallingAssembly().Location;
-        var fullTypeName = new FullTypeName(method.DeclaringType!.FullName);
-
-        var decompiler = new CSharpDecompiler(path, new DecompilerSettings(LanguageVersion.Latest));
-
-        var typeInfo = decompiler.TypeSystem.FindType(fullTypeName).GetDefinition()!;
-        var @params = method.GetParameters();
-
-        var methodToken = typeInfo.Methods.First(m =>
-            m.Name == method.Name &&
-            m.ReturnType.FullName == method.ReturnType.FullName &&
-            m.Parameters.Count == @params.Length &&
-            m.Parameters.Zip(@params)
-                .Select(t => t.First.Type.FullName == t.Second.ParameterType.FullName)
-                .All(b => b == true)
-        ).MetadataToken;
-
-        var source = decompiler.DecompileAsString(methodToken);
-
-        try
-        {
-            SyntaxHighlighter.Highlight(source);
-        }
-        catch (Exception)
-        {
-            Console.WriteLine(source);
-        }
-
-        return source;
-    }
-
-    public static string DecompileAsCSharp(Type type)
-    {
-        var path = Assembly.GetCallingAssembly().Location;
-        var fullTypeName = new FullTypeName(type.FullName);
-
-        var decompiler = new CSharpDecompiler(path, new DecompilerSettings(LanguageVersion.Latest));
-
-        var source = decompiler.DecompileTypeAsString(fullTypeName);
-
-        try
-        {
-            SyntaxHighlighter.Highlight(source);
-        }
-        catch (Exception)
-        {
-            Console.WriteLine(source);
-        }
-
-        return source;
-    }
+    }    
 }
