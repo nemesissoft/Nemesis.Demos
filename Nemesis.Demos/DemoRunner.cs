@@ -8,48 +8,43 @@ public class DemoRunner
         if (args is not null)
             Extensions.CheckDebugger(args);
 
-        var showables =
+        IEnumerable<IShowable> demos =
             Assembly.GetCallingAssembly().GetTypes()
             .Where(t => !t.IsAbstract && !t.IsGenericTypeDefinition && typeof(IShowable).IsAssignableFrom(t))
             .Select(t => (
                 Instance: (IShowable)Activator.CreateInstance(t)!,
-                Order: t.GetCustomAttribute<OrderAttribute>()?.Value ?? int.MaxValue,
-                t.Name
+                Order: t.GetCustomAttribute<OrderAttribute>()?.Value ?? int.MaxValue
                 )
             )
             .OrderBy(tuple => tuple.Order)
-            .ToList().AsReadOnly();
+            .Select(t => t.Instance)
+            .ToList();
+        IEnumerable<IShowable> builtInActions = [new ClearAction(), new ChangeThemeAction(), new ExitAction()];
 
 
-        int choice = -1;
+        var prompt =
+            new SelectionPrompt<IShowable>()
+                .Title("Select an [green]option[/]:")
+                .PageSize(25)
+                .UseConverter(s => s.Description)
+                .AddChoiceGroup(new NoOpAction("Demos"), demos)
+                .AddChoiceGroup(new NoOpAction("Built in"), builtInActions)
+                .EnableSearch()
+            ;
+
         while (true)
         {
-            int pad = (int)Math.Ceiling(Math.Log10(showables.Count + 1));
+            var choice = AnsiConsole.Prompt(prompt);
 
-            for (int i = 0; i < showables.Count; i++)
-                Console.WriteLine($"{(i + 1).ToString().PadLeft(pad + 1)}. {showables[i].Name}");
+            try
+            {
+                choice.Show();
+            }
+            catch (Exception e)
+            {
+                AnsiConsole.WriteException(e, ExceptionFormats.ShortenPaths | ExceptionFormats.ShortenTypes | ExceptionFormats.ShortenMethods);
+            }
 
-            using (Terminal.ForeColor(ConsoleColor.DarkGreen))
-                Console.Write($"{Environment.NewLine}Select demo: ");
-            var text = Console.ReadLine();
-            if (string.Equals("EXIT", text, StringComparison.OrdinalIgnoreCase))
-                break;
-            else if (string.Equals("CLEAR", text, StringComparison.OrdinalIgnoreCase) || string.Equals("CLS", text, StringComparison.OrdinalIgnoreCase))
-                AnsiConsole.Clear();
-            else if (int.TryParse(text, out choice) && choice >= 1 && choice <= showables.Count)
-                try
-                {
-                    showables[choice - 1].Instance.Show();
-                }
-                catch (Exception e)
-                {
-                    using var _ = Terminal.ForeColor(ConsoleColor.Red);
-
-                    var lines = e.ToString().Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
-                        .Select(s => $"    {s}");
-
-                    Console.WriteLine("ERROR:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
-                }
         }
     }
 }
@@ -57,10 +52,57 @@ public class DemoRunner
 public interface IShowable
 {
     void Show();
+
+    string Description => GetType().Name;
 }
 
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class OrderAttribute(int value) : Attribute
 {
     public int Value => value;
+}
+
+record NoOpAction(string Description) : IShowable
+{
+    public void Show() { }
+}
+
+class ClearAction : IShowable
+{
+    public void Show() => AnsiConsole.Clear();
+
+    public string Description => "Clear";
+}
+
+class ChangeThemeAction : IShowable
+{
+    public void Show()
+    {
+        var (name, theme, _) = AnsiConsole.Prompt(
+                    new SelectionPrompt<(string Name, SyntaxTheme Theme, bool IsCurrent)>()
+                        .Title("[green]Select a theme:[/]")
+                        .PageSize(20)
+                        .AddChoices(
+                            SyntaxTheme.All.Select(t => (t.Name, t.Theme, IsCurrent: Equals(Extensions.Theme, t.Theme)))
+                        )
+                        .UseConverter(t => t.IsCurrent ? $"[green]{t.Name} **[/]" : t.Name)
+                        .EnableSearch()
+        );
+
+        Extensions.Theme = theme;
+        AnsiConsole.MarkupLine($"[yellow]Theme changed to {name}![/]");
+    }
+
+    public string Description => "Change theme";
+}
+
+class ExitAction : IShowable
+{
+    public void Show()
+    {
+        if (AnsiConsole.Confirm("[red]Are you sure you want to quit?[/]"))
+            Environment.Exit(0);
+    }
+
+    public string Description => "Exit";
 }

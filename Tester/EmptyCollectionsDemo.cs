@@ -2,25 +2,11 @@
 using Tester.Runtime;
 using static Nemesis.Demos.Extensions;
 
-namespace Net8.Framework;
+namespace Tester;
 
 [Order(109)]
 internal class EmptyCollectionsDemo : IShowable
 {
-    class KafkaService
-    {
-        bool dataIsReady = false;
-
-        public IReadOnlyList<string> FetchData()
-        {
-            if (!dataIsReady) return new List<string>();//??
-            else return GetData();
-        }
-
-        private IReadOnlyList<string> GetData() => throw new NotImplementedException();
-    }
-
-
     public void Show()
     {
         DecompileAsCSharp(Method.Of(Arrays));

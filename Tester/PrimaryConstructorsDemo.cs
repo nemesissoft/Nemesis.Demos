@@ -1,6 +1,6 @@
 ﻿using static Nemesis.Demos.Extensions;
 
-namespace Net8.Features;
+namespace Tester;
 
 [Order(1)]
 internal class PrimaryConstructors : IShowable

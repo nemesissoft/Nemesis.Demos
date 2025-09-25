@@ -78,6 +78,20 @@ public static class SyntaxHighlighter
 
 public record SyntaxTheme(string Keyword, string Type, string String, string Number, string Comment, string PlainText)
 {
+    public static readonly List<(string Name, SyntaxTheme Theme)> All;
+
+    static SyntaxTheme()
+    {
+        All = typeof(SyntaxTheme).GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+            .Where(p => p.PropertyType == typeof(SyntaxTheme))
+            .Select(p => (
+                p.Name,
+                (SyntaxTheme)p.GetValue(null)!
+            ))
+            .ToList();
+
+    }
+
     public static SyntaxTheme Dracula => new(
       Keyword: "pink1 bold",
       Type: "deepskyblue1",
