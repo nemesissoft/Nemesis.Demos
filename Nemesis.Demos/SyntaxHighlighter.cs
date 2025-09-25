@@ -171,4 +171,76 @@ public record SyntaxTheme(string Keyword, string Type, string String, string Num
         Number: "darkorange",
         Comment: "grey50",
         PlainText: "black");
+
+    public static SyntaxTheme Nord => new(
+        Keyword: "cyan1 bold",
+        Type: "lightskyblue1",
+        String: "lightgreen",
+        Number: "lightpink1",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme OneDark => new(
+        Keyword: "magenta bold",
+        Type: "cyan1",
+        String: "green3",
+        Number: "darkorange",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme GruvboxDark => new(
+        Keyword: "yellow1 bold",
+        Type: "deepskyblue1",
+        String: "green3",
+        Number: "darkorange",
+        Comment: "grey58",
+        PlainText: "white");
+
+    public static SyntaxTheme TomorrowNight => new(
+        Keyword: "cyan1 bold",
+        Type: "yellow1",
+        String: "lightgreen",
+        Number: "orchid1",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme Cyberpunk => new(
+        Keyword: "hotpink bold",
+        Type: "deepskyblue1",
+        String: "yellow1",
+        Number: "magenta1",
+        Comment: "grey42",
+        PlainText: "white");
+
+    public static SyntaxTheme NightOwl => new(
+        Keyword: "blue bold",
+        Type: "cyan1",
+        String: "lightgreen",
+        Number: "orchid1",
+        Comment: "grey54",
+        PlainText: "white");
+
+    public static SyntaxTheme DraculaPro => new(
+        Keyword: "pink1 bold",
+        Type: "deepskyblue1",
+        String: "yellow1",
+        Number: "violet",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme AyuDark => new(
+        Keyword: "orange1 bold",
+        Type: "cyan1",
+        String: "green3",
+        Number: "yellow1",
+        Comment: "grey50",
+        PlainText: "white");
+
+    public static SyntaxTheme AyuLight => new(
+        Keyword: "blue bold",
+        Type: "darkcyan",
+        String: "darkgreen",
+        Number: "darkmagenta",
+        Comment: "grey42",
+        PlainText: "black");    
 }
