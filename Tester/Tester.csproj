@@ -2,7 +2,9 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		
+
+		<InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Tester;Tester.Features.Generated</InterceptorsPreviewNamespaces>
+
 		<!--Be able to browse generated files-->
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>

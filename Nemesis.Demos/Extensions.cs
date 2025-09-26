@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json.Nodes;
 using Nemesis.TextParsers;
 
 namespace Nemesis.Demos;
@@ -62,6 +63,8 @@ public static class Extensions
         var type = obj.GetType();
         if (store.IsSupportedForTransformation(type))
             return store.GetTransformer(type).FormatObject(obj);
+        else if (obj is JsonObject jo)
+            return jo.ToString();
         else
         {
             if (type.GetProperties() is { } props && props.Length > 0)
@@ -108,5 +111,5 @@ public static class Extensions
         {
             Debugger.Launch();
         }
-    }    
+    }
 }
