@@ -2,6 +2,7 @@
 using ICSharpCode.Decompiler.CSharp;
 using Spectre.Console;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Nemesis.Demos;
 public class DemoRunner
@@ -12,6 +13,8 @@ public class DemoRunner
 
     public void Run(string[]? args = null)
     {
+        Console.OutputEncoding = Encoding.UTF8;
+
         if (args is not null)
             Extensions.CheckDebugger(args);
 
@@ -134,11 +137,11 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
         AnsiConsole.Clear();
 
         var state = new SelectionState<ThemeMeta>(
-            SyntaxTheme.All.Select(t => new ThemeMeta(t.Name, t.Theme, IsCurrent: Equals(Options.Theme, t.Theme))).ToList()
+            SyntaxTheme.All.Select(t => new ThemeMeta(t.Theme, IsCurrent: Equals(Options.Theme, t.Theme))).ToList()
             );
         var console = AnsiConsole.Console;
 
-        bool shouldUpdateTheme = AnsiConsole.Live(CreateLayout(state, parsedCode))
+        SyntaxTheme? result = AnsiConsole.Live(CreateLayout(state, parsedCode))
             .AutoClear(true)
             .Start(ctx =>
             {
@@ -170,9 +173,9 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
 
                             case ConsoleKey.End: state.SelectLast(); break;
 
-                            case ConsoleKey.Enter: return true;
+                            case ConsoleKey.Enter: return state.SelectedOption.Theme;
 
-                            case ConsoleKey.Escape: return false;
+                            case ConsoleKey.Escape: return null;
                         }
 
                         if (oldIndex != state.SelectedIndex)
@@ -180,18 +183,18 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
                     }
                 }
             });
-        if (shouldUpdateTheme)
+        if (result is not null)
         {
-            Options.Theme = state.SelectedOption.Theme;
-            AnsiConsole.MarkupLine($"[yellow]Theme changed to {state.SelectedOption.Name}![/]");
+            Options.Theme = result;
+            AnsiConsole.MarkupLine($"[yellow]Theme changed to {result.Name}![/]");
         }
     }
 
     private static Layout CreateLayout(SelectionState<ThemeMeta> state, SyntaxNode parsedCode) =>
         new Layout("Root")
             .SplitColumns(
-                new Layout("SelectionPanel").Size(30).Update(CreateSelectionPanel(state)),
-                new Layout("DetailPanel").Update(CreateDetailPanel(state, parsedCode))
+                new Layout("SelectionPanel", CreateSelectionPanel(state)).Size(30),
+                new Layout("DetailPanel", CreateDetailPanel(state.SelectedOption.Theme, parsedCode))
             );
 
     private static Panel CreateSelectionPanel(SelectionState<ThemeMeta> state)
@@ -204,14 +207,17 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
         for (int i = 0; i < state.Options.Count; i++)
         {
             var meta = state.Options[i];
-            string text = meta.IsCurrent ? $"[underline]{meta.Name}[/]" : meta.Name;
+
+            string text = meta.Theme.Name;
+            
+            text = meta.IsCurrent ? $"[underline]{text}[/]" : text;
 
             if (i == state.SelectedIndex)
                 sb.AppendLine($"[black on blue]> {text} <[/]"); // Highlight the selected option
             else
                 sb.AppendLine($"  {text}");
         }
-
+        
         var selectionContent = new Markup(sb.ToString());
 
         return new Panel(selectionContent)
@@ -219,17 +225,23 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
             .Expand();
     }
 
-    private static Panel CreateDetailPanel(SelectionState<ThemeMeta> state, SyntaxNode parsedCode)
+    private static Panel CreateDetailPanel(SyntaxTheme theme, SyntaxNode parsedCode)
     {
-        var markup = new SyntaxHighlighter(new() { Theme = state.SelectedOption.Theme })
+        var markup = new SyntaxHighlighter(new() { Theme = theme })
             .GetHighlightedMarkup(parsedCode);
 
+        var themeName = theme.Name;
+        if (themeName.EndsWith("Light"))
+            themeName = themeName[..^"Light".Length] + Emoji.Known.SunWithFace;
+        else if (themeName.EndsWith("Dark"))
+            themeName = themeName[..^"Dark".Length] + Emoji.Known.NewMoon;
+
         return new Panel(new Markup(markup))
-            .Header($"[bold white]Preview for {state.SelectedOption.Name}[/]")
+            .Header($"[bold white]Preview for {themeName}[/]")
             .Expand();
     }
 
-    private record ThemeMeta(string Name, SyntaxTheme Theme, bool IsCurrent);
+    private record ThemeMeta(SyntaxTheme Theme, bool IsCurrent);
 
     private class SelectionState<T>
     {

@@ -51,7 +51,7 @@ public class Decompiler(DemosOptions Options)
     {
         try
         {
-            AnsiConsole.Markup(new SyntaxHighlighter(Options).GetHighlightedMarkup($"//Decompiled with version: {Options.LanguageVersion}{Environment.NewLine}{source}"));
+            AnsiConsole.Markup(new SyntaxHighlighter(Options).GetHighlightedMarkup($"//Decompiled using {Options.Theme.Name} with C# version {Options.LanguageVersion}{Environment.NewLine}{source}"));
         }
         catch (Exception) { Console.WriteLine(source); }
     }
