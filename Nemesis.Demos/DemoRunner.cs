@@ -6,12 +6,16 @@ using System.Text;
 namespace Nemesis.Demos;
 public class DemoRunner
 {
-    public static void Run(string[]? args = null)
+    private readonly DemosOptions? _demosOptions;
+
+    public DemoRunner(DemosOptions? demosOptions = null) => _demosOptions = demosOptions;
+
+    public void Run(string[]? args = null)
     {
         if (args is not null)
             Extensions.CheckDebugger(args);
 
-        DemosOptions demosOptions = new();
+        DemosOptions demosOptions = _demosOptions ?? new();
         Decompiler decompiler = new(demosOptions);
 
         IEnumerable<IRunnable> demos =
@@ -135,6 +139,7 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
         var console = AnsiConsole.Console;
 
         bool shouldUpdateTheme = AnsiConsole.Live(CreateLayout(state, parsedCode))
+            .AutoClear(true)
             .Start(ctx =>
             {
                 ctx.UpdateTarget(CreateLayout(state, parsedCode));
@@ -154,19 +159,17 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
 
                         switch (key.Value.Key)
                         {
-                            case ConsoleKey.UpArrow:
-                                selectionChanged = state.TryGoUpIfPossible();
-                                break;
+                            case ConsoleKey.UpArrow: selectionChanged = state.SelectUp(); break;
 
-                            case ConsoleKey.DownArrow:
-                                selectionChanged = state.TryGoDownIfPossible();
-                                break;
+                            case ConsoleKey.DownArrow: selectionChanged = state.SelectDown(); break;
 
-                            case ConsoleKey.Enter:
-                                return true;
+                            case ConsoleKey.Home: selectionChanged = state.SelectFirst(); break;
+                            
+                            case ConsoleKey.End: selectionChanged = state.SelectLast(); break;
 
-                            case ConsoleKey.Escape:
-                                return false;
+                            case ConsoleKey.Enter: return true;
+
+                            case ConsoleKey.Escape: return false;
                         }
 
                         if (selectionChanged)
@@ -175,10 +178,10 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
                 }
             });
         if (shouldUpdateTheme)
+        {
             Options.Theme = state.SelectedOption.Theme;
-
-        AnsiConsole.Clear();
-        AnsiConsole.MarkupLine($"[yellow]Theme changed to {state.SelectedOption.Name}![/]");
+            AnsiConsole.MarkupLine($"[yellow]Theme changed to {state.SelectedOption.Name}![/]");
+        }
     }
 
     private static Layout CreateLayout(SelectionState<ThemeMeta> state, SyntaxNode parsedCode) =>
@@ -192,7 +195,7 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine("[yellow]Use [green]Up[/] and [green]Down[/] to select, [green]Enter[/] to confirm or [green]Esc[/] to cancel.[/]");
+        sb.AppendLine("[yellow]Use Up, Down, Home and End to select, [green]Enter[/] to confirm or [red]Esc[/] to cancel.[/]");
         sb.AppendLine();
 
         for (int i = 0; i < state.Options.Count; i++)
@@ -219,36 +222,64 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
             .GetHighlightedMarkup(parsedCode);
 
         return new Panel(new Markup(markup))
-            .Header("[bold white]Preview[/]")
+            .Header($"[bold white]Preview for {state.SelectedOption.Name}[/]")
             .Expand();
     }
 
     private record ThemeMeta(string Name, SyntaxTheme Theme, bool IsCurrent);
 
-    private class SelectionState<T>(IReadOnlyList<T> options)
+    private class SelectionState<T>
     {
+        public IReadOnlyList<T> Options { get; }
         public int SelectedIndex { get; private set; } = 0;
-        public IReadOnlyList<T> Options { get; } = options;
         public T SelectedOption => Options[SelectedIndex];
 
-        public bool TryGoUpIfPossible()
+        public SelectionState(IReadOnlyList<T> options)
         {
-            if (SelectedIndex > 0)
-            {
-                SelectedIndex--;
-                return true;
-            }
-            return false;
+            if (options == null || options.Count == 0)
+                throw new ArgumentNullException(nameof(options), "options should contain at least 1 element");
+            Options = options;
         }
 
-        public bool TryGoDownIfPossible()
+        public bool SelectUp()
         {
+            var old = SelectedIndex;
+
+            if (SelectedIndex > 0)
+                SelectedIndex--;
+            else
+                SelectedIndex = Options.Count - 1; // wrap to last
+
+            return old != SelectedIndex;
+        }
+
+        public bool SelectDown()
+        {
+            var old = SelectedIndex;
             if (SelectedIndex < Options.Count - 1)
-            {
                 SelectedIndex++;
-                return true;
-            }
-            return false;
+            else
+                SelectedIndex = 0; // wrap to first
+
+            return old != SelectedIndex;
+        }
+
+        public bool SelectFirst()
+        {
+            var old = SelectedIndex;
+
+            SelectedIndex = 0;
+
+            return old != SelectedIndex;
+        }
+
+        public bool SelectLast()
+        {
+            var old = SelectedIndex;
+
+            SelectedIndex = Options.Count - 1;
+
+            return old != SelectedIndex;
         }
     }
 }

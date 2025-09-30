@@ -1,1 +1,1 @@
-﻿DemoRunner.Run(args);
+﻿new DemoRunner().Run(args);
