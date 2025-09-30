@@ -2,18 +2,33 @@
 using ICSharpCode.Decompiler.CSharp;
 using Spectre.Console;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Nemesis.Demos;
 public class DemoRunner
 {
     private readonly DemosOptions? _demosOptions;
+    private readonly string? _title;
 
-    public DemoRunner(DemosOptions? demosOptions = null) => _demosOptions = demosOptions;
+    public DemoRunner(DemosOptions? demosOptions = null, string? title = null)
+    {
+        _demosOptions = demosOptions;
+        _title = title;
+    }
 
     public void Run(string[]? args = null)
     {
         Console.OutputEncoding = Encoding.UTF8;
+
+        if (!string.IsNullOrWhiteSpace(_title))
+        {
+            var font = FigletFont.Load("Fonts/univers.flf");
+
+            AnsiConsole.Write(
+                new FigletText(font, _title)
+                .LeftJustified()
+                .Color(Color.Red)
+            );
+        }
 
         if (args is not null)
             Extensions.CheckDebugger(args);
@@ -56,9 +71,8 @@ public class DemoRunner
             }
             catch (Exception e)
             {
-                AnsiConsole.WriteException(e, ExceptionFormats.ShortenPaths | ExceptionFormats.ShortenTypes | ExceptionFormats.ShortenMethods);
+                AnsiConsole.WriteException(e, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
             }
-
         }
     }
 
@@ -209,7 +223,7 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
             var meta = state.Options[i];
 
             string text = meta.Theme.Name;
-            
+
             text = meta.IsCurrent ? $"[underline]{text}[/]" : text;
 
             if (i == state.SelectedIndex)
@@ -217,7 +231,7 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
             else
                 sb.AppendLine($"  {text}");
         }
-        
+
         var selectionContent = new Markup(sb.ToString());
 
         return new Panel(selectionContent)
