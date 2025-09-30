@@ -155,24 +155,27 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
                     }
                     else
                     {
-                        bool selectionChanged = false;
+                        var oldIndex = state.SelectedIndex;
+
 
                         switch (key.Value.Key)
                         {
-                            case ConsoleKey.UpArrow: selectionChanged = state.SelectUp(); break;
+                            case ConsoleKey.UpArrow: state.SelectPrev(); break;
+                            case ConsoleKey.LeftArrow: state.SelectPrev(); break;
 
-                            case ConsoleKey.DownArrow: selectionChanged = state.SelectDown(); break;
+                            case ConsoleKey.DownArrow: state.SelectNext(); break;
+                            case ConsoleKey.RightArrow: state.SelectNext(); break;
 
-                            case ConsoleKey.Home: selectionChanged = state.SelectFirst(); break;
-                            
-                            case ConsoleKey.End: selectionChanged = state.SelectLast(); break;
+                            case ConsoleKey.Home: state.SelectFirst(); break;
+
+                            case ConsoleKey.End: state.SelectLast(); break;
 
                             case ConsoleKey.Enter: return true;
 
                             case ConsoleKey.Escape: return false;
                         }
 
-                        if (selectionChanged)
+                        if (oldIndex != state.SelectedIndex)
                             ctx.UpdateTarget(CreateLayout(state, parsedCode));
                     }
                 }
@@ -241,46 +244,19 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
             Options = options;
         }
 
-        public bool SelectUp()
+        public void SelectPrev() => SelectedIndex = SelectedIndex switch
         {
-            var old = SelectedIndex;
+            > 0 => SelectedIndex - 1,
+            _ => Options.Count - 1,// wrap to last
+        };
 
-            if (SelectedIndex > 0)
-                SelectedIndex--;
-            else
-                SelectedIndex = Options.Count - 1; // wrap to last
+        public void SelectNext() => SelectedIndex = SelectedIndex < Options.Count - 1
+            ? SelectedIndex + 1
+            : 0;// wrap to first
 
-            return old != SelectedIndex;
-        }
+        public void SelectFirst() => SelectedIndex = 0;
 
-        public bool SelectDown()
-        {
-            var old = SelectedIndex;
-            if (SelectedIndex < Options.Count - 1)
-                SelectedIndex++;
-            else
-                SelectedIndex = 0; // wrap to first
-
-            return old != SelectedIndex;
-        }
-
-        public bool SelectFirst()
-        {
-            var old = SelectedIndex;
-
-            SelectedIndex = 0;
-
-            return old != SelectedIndex;
-        }
-
-        public bool SelectLast()
-        {
-            var old = SelectedIndex;
-
-            SelectedIndex = Options.Count - 1;
-
-            return old != SelectedIndex;
-        }
+        public void SelectLast() => SelectedIndex = Options.Count - 1;
     }
 }
 
