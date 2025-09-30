@@ -31,7 +31,8 @@ public class DemoRunner
 
         var prompt =
             new SelectionPrompt<IRunnable>()
-                .PageSize(25)
+                .PageSize(40)
+                .WrapAround(true)
                 .UseConverter(s => s.Description)
                 .AddChoiceGroup(new NoOpAction("Demos"), demos)
                 .AddChoiceGroup(new NoOpAction("Built in"), builtInActions)
@@ -133,19 +134,16 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
             );
         var console = AnsiConsole.Console;
 
-        bool isDone = false;
-
-        AnsiConsole.Live(CreateLayout(state, parsedCode))
+        bool shouldUpdateTheme = AnsiConsole.Live(CreateLayout(state, parsedCode))
             .Start(ctx =>
             {
                 ctx.UpdateTarget(CreateLayout(state, parsedCode));
 
-                while (!isDone)
+                while (true)
                 {
-                    var key = console.Input.ReadKey(intercept: true);
+                    ConsoleKeyInfo? key = console.Input.ReadKey(intercept: true);
 
-                    // If the terminal doesn't support reading keys, or the key is null, we break (or continue)
-                    if (!key.HasValue)
+                    if (!key.HasValue)// If the terminal doesn't support reading keys, or the key is null, we break (or continue)
                     {
                         Thread.Sleep(50); // Prevent burning CPU if ReadKey somehow returns null rapidly
                         continue;
@@ -165,8 +163,10 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
                                 break;
 
                             case ConsoleKey.Enter:
-                                isDone = true;
-                                break;
+                                return true;
+
+                            case ConsoleKey.Escape:
+                                return false;
                         }
 
                         if (selectionChanged)
@@ -174,8 +174,9 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
                     }
                 }
             });
-                
-        Options.Theme = state.SelectedOption.Theme;
+        if (shouldUpdateTheme)
+            Options.Theme = state.SelectedOption.Theme;
+
         AnsiConsole.Clear();
         AnsiConsole.MarkupLine($"[yellow]Theme changed to {state.SelectedOption.Name}![/]");
     }
@@ -191,13 +192,13 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine("[yellow]Use [green]Up[/] and [green]Down[/] to select, [green]Enter[/] to confirm.[/]");
+        sb.AppendLine("[yellow]Use [green]Up[/] and [green]Down[/] to select, [green]Enter[/] to confirm or [green]Esc[/] to cancel.[/]");
         sb.AppendLine();
 
         for (int i = 0; i < state.Options.Count; i++)
         {
             var meta = state.Options[i];
-            string text = meta.IsCurrent ? $"{meta.Name} **" : meta.Name;
+            string text = meta.IsCurrent ? $"[underline]{meta.Name}[/]" : meta.Name;
 
             if (i == state.SelectedIndex)
                 sb.AppendLine($"[black on blue]> {text} <[/]"); // Highlight the selected option
@@ -214,7 +215,8 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
 
     private static Panel CreateDetailPanel(SelectionState<ThemeMeta> state, SyntaxNode parsedCode)
     {
-        var markup = new SyntaxHighlighter(state.SelectedOption.Theme).GetHighlightedMarkup(parsedCode);
+        var markup = new SyntaxHighlighter(new() { Theme = state.SelectedOption.Theme })
+            .GetHighlightedMarkup(parsedCode);
 
         return new Panel(new Markup(markup))
             .Header("[bold white]Preview[/]")
@@ -258,7 +260,8 @@ record ChangeLanguageVersionAction(DemosOptions Options) : IRunnable
         var (selectedVersion, _) = AnsiConsole.Prompt(
             new SelectionPrompt<(LanguageVersion Version, bool IsCurrent)>()
                 .Title("[green]Select a language version:[/]")
-                .PageSize(20)
+                .WrapAround(true)
+                .PageSize(30)
                 .AddChoices(
                     Enum.GetValues<LanguageVersion>().Select(lv => (Version: lv, IsCurrent: Equals(Options.LanguageVersion, lv)))
                 )

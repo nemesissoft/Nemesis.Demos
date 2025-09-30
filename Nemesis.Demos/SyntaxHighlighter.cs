@@ -5,10 +5,8 @@ using System.Text;
 
 namespace Nemesis.Demos;
 
-public class SyntaxHighlighter(SyntaxTheme theme)
+public class SyntaxHighlighter(DemosOptions Options)
 {
-    public SyntaxTheme Theme { get; } = theme;
-
     public static SyntaxNode GetParsedCodeRoot(string code) => CSharpSyntaxTree.ParseText(code).GetRoot();
 
     public string GetHighlightedMarkup(string code) => GetHighlightedMarkup(GetParsedCodeRoot(code));
@@ -22,15 +20,15 @@ public class SyntaxHighlighter(SyntaxTheme theme)
         {
             // Leading trivia (comments, whitespace, newlines)
             foreach (var trivia in token.LeadingTrivia)
-                AppendTrivia(sb, trivia, Theme);
+                AppendTrivia(sb, trivia, Options.Theme);
 
             // Token itself
-            string color = GetColor(token, Theme);
+            string color = GetColor(token, Options.Theme);
             sb.Append(EscapeSpectreMarkup(token.Text, color));
 
             // Trailing trivia
             foreach (var trivia in token.TrailingTrivia)
-                AppendTrivia(sb, trivia, Theme);
+                AppendTrivia(sb, trivia, Options.Theme);
         }
 
         return sb.ToString();
