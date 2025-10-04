@@ -1,18 +1,33 @@
-﻿using ICSharpCode.Decompiler.CSharp;
+﻿using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.TypeSystem;
-using ICSharpCode.Decompiler;
 using Spectre.Console;
 
 namespace Nemesis.Demos;
 
-public class Decompiler(DemosOptions Options)
+internal class Decompiler(DemosOptions Options)
 {
+    public string DecompileAsCSharp(string methodName, string? fullTypeName = null)
+    {
+        if (string.IsNullOrEmpty(fullTypeName))
+            fullTypeName = new StackFrame(1).GetMethod()?.DeclaringType?.AssemblyQualifiedName;
+
+        if (string.IsNullOrEmpty(fullTypeName))
+            throw new ArgumentException("Cannot determine declaring type", nameof(fullTypeName));
+
+        var type = Type.GetType(fullTypeName, false) ?? throw new ArgumentException($"Type '{fullTypeName}' not found", nameof(fullTypeName));
+        var methodInfo = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+        return methodInfo == null
+            ? throw new ArgumentException($"Method '{methodName}' not found in type '{fullTypeName}'", nameof(methodName))
+            : DecompileAsCSharp(methodInfo);
+    }
+
     public string DecompileAsCSharp(MethodInfo method)
     {
-        var path = Assembly.GetCallingAssembly().Location;
+        var path = method.DeclaringType!.Assembly.Location;
         var fullTypeName = new FullTypeName(method.DeclaringType!.FullName);
 
-        var decompiler = new CSharpDecompiler(path, new DecompilerSettings(Options.LanguageVersion));
+        var decompiler = new ICSharpCode.Decompiler.CSharp.CSharpDecompiler(path, new DecompilerSettings(Options.LanguageVersion));
 
         var typeInfo = decompiler.TypeSystem.FindType(fullTypeName).GetDefinition()!;
         var @params = method.GetParameters();
@@ -26,33 +41,16 @@ public class Decompiler(DemosOptions Options)
                 .All(b => b == true)
         ).MetadataToken;
 
-        var source = decompiler.DecompileAsString(methodToken);
-
-        HighlightCode(source);
-
-        return source;
+        return decompiler.DecompileAsString(methodToken);
     }
 
     public string DecompileAsCSharp(Type type)
     {
-        var path = Assembly.GetCallingAssembly().Location;
+        var path = type.Assembly.Location;
         var fullTypeName = new FullTypeName(type.FullName);
 
-        var decompiler = new CSharpDecompiler(path, new DecompilerSettings(Options.LanguageVersion));
+        var decompiler = new ICSharpCode.Decompiler.CSharp.CSharpDecompiler(path, new DecompilerSettings(Options.LanguageVersion));
 
-        var source = decompiler.DecompileTypeAsString(fullTypeName);
-
-        HighlightCode(source);
-
-        return source;
-    }
-
-    private void HighlightCode(string source)
-    {
-        try
-        {
-            AnsiConsole.Markup(new SyntaxHighlighter(Options).GetHighlightedMarkup($"//Decompiled using {Options.Theme.Name} with C# version {Options.LanguageVersion}{Environment.NewLine}{source}"));
-        }
-        catch (Exception) { Console.WriteLine(source); }
+        return decompiler.DecompileTypeAsString(fullTypeName);
     }
 }

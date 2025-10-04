@@ -1,34 +1,36 @@
-﻿namespace Nemesis.Demos;
+﻿using Spectre.Console;
+
+namespace Nemesis.Demos;
 
 public static class ConsoleColors
 {
-    public static IDisposable ForeColor(ConsoleColor color) => new ForeColorStruct(color);
+    public static IDisposable ForeColor(Color color) => new ForeColorStruct(color);
 
-    public static IDisposable BackColor(ConsoleColor color) => new BackColorStruct(color);
+    public static IDisposable BackColor(Color color) => new BackColorStruct(color);
 
     private readonly struct ForeColorStruct : IDisposable
     {
-        private readonly ConsoleColor _previousColor;
+        private readonly Color _previousColor;
 
-        internal ForeColorStruct(ConsoleColor foreColor)
+        internal ForeColorStruct(Color foreColor)
         {
-            _previousColor = Console.ForegroundColor;
-            Console.ForegroundColor = foreColor;
+            _previousColor = AnsiConsole.Foreground;
+            AnsiConsole.Foreground = foreColor;
         }
 
-        public void Dispose() => Console.ForegroundColor = _previousColor;
+        public void Dispose() => AnsiConsole.Foreground = _previousColor;
     }
 
     private readonly struct BackColorStruct : IDisposable
     {
-        private readonly ConsoleColor _previousColor;
+        private readonly Color _previousColor;
 
-        internal BackColorStruct(ConsoleColor foreColor)
+        internal BackColorStruct(Color foreColor)
         {
-            _previousColor = Console.BackgroundColor;
-            Console.BackgroundColor = foreColor;
+            _previousColor = AnsiConsole.Background;
+            AnsiConsole.Background = foreColor;
         }
 
-        public void Dispose() => Console.BackgroundColor = _previousColor;
+        public void Dispose() => AnsiConsole.Background = _previousColor;
     }
 }

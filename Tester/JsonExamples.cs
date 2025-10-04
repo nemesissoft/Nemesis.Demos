@@ -3,13 +3,13 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-
+using Nemesis.Demos.Highlighters;
+using Spectre.Console;
 using static Nemesis.Demos.Extensions;
-
 namespace Tester;
 
 [Order(102)]
-internal partial class JsonExamples : IRunnable
+internal partial class JsonExamples(DemoRunner demo) : IRunnable
 {
     public void Run()
     {
@@ -22,6 +22,13 @@ internal partial class JsonExamples : IRunnable
         NewTypesSupport();
         OptionImmutability();
         NewsInJsonNode();
+    }
+
+    private void HighlightJson(string json, string? prepend = null)
+    {
+        if (prepend is not null)
+            AnsiConsole.Write(prepend);
+        demo.HighlightCode(json, Language.Json);
     }
 
     private static void Required()
@@ -54,22 +61,20 @@ internal partial class JsonExamples : IRunnable
     }
 
 
-    private static void ResolverChain()
+    private void ResolverChain()
     {
         var task = new WeeklyRecurringTask(DaysOfWeek.Wednesday);
 
-        JsonSerializer.Serialize(task, MyContext.Default.WeeklyRecurringTask)
-            .Dump(); //{"Day":4}
+        HighlightJson(JsonSerializer.Serialize(task, MyContext.Default.WeeklyRecurringTask)); //{"Day":4}
 
-        JsonSerializer.Serialize(task, MyContext2.Default.WeeklyRecurringTask)
-            .Dump(); //{"day":"Wednesday"}
+        HighlightJson(JsonSerializer.Serialize(task, MyContext2.Default.WeeklyRecurringTask)); //{"day":"Wednesday"}
 
         //ANALYSER CA1869
         var options = new JsonSerializerOptions();
         //options.TypeInfoResolver = JsonTypeInfoResolver.Combine(ContextA.Default, ContextB.Default, ContextC.Default);
         options.TypeInfoResolverChain.Insert(0, MyContext2.Default);
 
-        JsonSerializer.Serialize(task, options).Dump();//{"Day":"Wednesday"}
+        HighlightJson(JsonSerializer.Serialize(task, options));//{"Day":"Wednesday"}
     }
 
     public record WeeklyRecurringTask(DaysOfWeek Day);
@@ -103,7 +108,7 @@ internal partial class JsonExamples : IRunnable
     [JsonSourceGenerationOptions(UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]
     [
         JsonSerializable(typeof(Person)),
-        JsonSerializable(typeof(WeeklyRecurringTask))        
+        JsonSerializable(typeof(WeeklyRecurringTask))
     ]
     public partial class MyContext : JsonSerializerContext { }
 
@@ -128,7 +133,6 @@ internal partial class JsonExamples : IRunnable
     {
         JsonSerializer.IsReflectionEnabledByDefault.Dump("IsReflectionEnabledByDefault: ");
         JsonSerializer.Serialize(42);
-
 
         //<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
         /*Extensions.ExpectFailure<InvalidOperationException>(
@@ -171,20 +175,16 @@ internal partial class JsonExamples : IRunnable
     }
 
 
-
-    private static void NewTypesSupport()
+    private void NewTypesSupport()
     {
-        JsonSerializer.Serialize(new object[] { Half.MaxValue, Int128.MaxValue, UInt128.MaxValue })
-            .Dump("Numbers: "); //[65500,170141183460469231731687303715884105727,340282366920938463463374607431768211455]
+        HighlightJson(JsonSerializer.Serialize(new object[] { Half.MaxValue, Int128.MaxValue, UInt128.MaxValue }), "Numbers:"); //[65500,170141183460469231731687303715884105727,340282366920938463463374607431768211455]
 
-        JsonSerializer.Serialize<ReadOnlyMemory<byte>>(new byte[] { 1, 2, 3, 4, 5 }).Dump("Base64: "); // "AQIDBAU="
-        JsonSerializer.Serialize<ReadOnlyMemory<int>>(new int[] { 1, 2, 3 }).Dump("Numbers: "); // [1,2,3]
+        HighlightJson(JsonSerializer.Serialize<ReadOnlyMemory<byte>>(new byte[] { 1, 2, 3, 4, 5 }), "Base64: "); // "AQIDBAU="
+        HighlightJson(JsonSerializer.Serialize<ReadOnlyMemory<int>>(new int[] { 1, 2, 3 }), "Numbers: "); // [1,2,3]
     }
 
 
-
-
-    private static void OptionImmutability()
+    private void OptionImmutability()
     {
         var options = new JsonSerializerOptions
         {
@@ -197,9 +197,7 @@ internal partial class JsonExamples : IRunnable
                 }
             })
         };
-        JsonSerializer.Serialize(new WeeklyRecurringTask(DaysOfWeek.Weekdays), options)
-            .Dump(); //{"_DAY_":31}
-
+        HighlightJson(JsonSerializer.Serialize(new WeeklyRecurringTask(DaysOfWeek.Weekdays), options)); //{"_DAY_":31}
 
 
         var options2 = new JsonSerializerOptions
@@ -215,47 +213,64 @@ internal partial class JsonExamples : IRunnable
             "JsonSerializerOptions instance is read-only or has already been used in serialization or deserialization."
         );
 
-        JsonSerializer.Serialize(new Singer("Mike", "Oldfield"), options2)
-            .Dump();//{"name":"Mike","family-name":"Oldfield"}
+        HighlightJson(JsonSerializer.Serialize(new Singer("Mike", "Oldfield"), options2));//{"name":"Mike","family-name":"Oldfield"}
     }
 
     record Singer(string Name, string FamilyName);
 
 
 
-    private static void NewsInJsonNode()
+    private void NewsInJsonNode()
     {
         var node = JsonNode.Parse("""{"Name" : "Mike", "Age" : 39, "Prop" : { "NestedProp" : 42 } }""")!;
-        var other = node.DeepClone().Dump();
-        JsonNode.DeepEquals(node, other).Dump("Are same = ");
+        var other = node.DeepClone();
 
+        HighlightJson(other.ToJsonString(), "Cloned:\n");
+
+        JsonNode.DeepEquals(node, other).Dump("Are same = ");
 
 
         var jsonArray = new JsonArray(1, 2, 3, 2);
         IEnumerable<int> values = jsonArray.GetValues<int>().Where(i => i == 2);
 
 
-        ExamplesAsync().GetAwaiter().GetResult();
+        SingleAsync().GetAwaiter().GetResult();
+        MultiAsync().GetAwaiter().GetResult();
     }
 
-    private static async Task ExamplesAsync()
+    private async Task SingleAsync()
     {
         var text = """{"Name" : "Mike", "Age" : 39, "Prop" : { "NestedProp" : 42 } }"""u8.ToArray();
         using var stream = new MemoryStream(text);
         var node = await JsonNode.ParseAsync(stream);
-        node.Dump();
+        HighlightJson(node?.ToJsonString() ?? "{}");
+    }
 
-
+    private async Task MultiAsync()
+    {
         using var client = new HttpClient();
         IAsyncEnumerable<Book?> books = client
             .GetFromJsonAsAsyncEnumerable<Book>(@"https://raw.githubusercontent.com/bvaughn/infinite-list-reflow-examples/master/books.json");
 
+        var table = new Table { Border = TableBorder.Rounded };
+        table.AddColumn("No.");
+        table.AddColumn("ISBN");
+        table.AddColumn("Title");
+        table.AddColumn("Authors");
+
         int i = 1;
         await foreach (var book in books)
         {
-            Console.WriteLine($"{i:##}. '{book?.Title}'");
+            table.AddRow(
+                $"{i,3}",
+                book?.Isbn ?? "",
+                book?.Title ?? "",
+                string.Join(", ", book?.Authors ?? []));
             if (i++ >= 10) break;
         }
+
+        AnsiConsole.Write(table);
     }
+
     record Book(string Isbn, string Title, string[] Authors);
 }

@@ -1,7 +1,7 @@
 ﻿using Spectre.Console;
 using Microsoft.CodeAnalysis;
 
-namespace Nemesis.Demos;
+namespace Nemesis.Demos.Highlighters;
 
 public record SyntaxTheme(string Name, string Keyword, string Type, string String, string Number, string Comment, string PlainText)
 {

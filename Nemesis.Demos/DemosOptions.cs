@@ -1,4 +1,6 @@
-﻿namespace Nemesis.Demos;
+﻿using Nemesis.Demos.Highlighters;
+
+namespace Nemesis.Demos;
 
 public class DemosOptions
 {

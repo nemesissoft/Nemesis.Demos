@@ -2,18 +2,44 @@
 using ICSharpCode.Decompiler.CSharp;
 using Spectre.Console;
 using System.Text;
+using Nemesis.Demos.Highlighters;
 
 namespace Nemesis.Demos;
 public class DemoRunner
 {
-    private readonly DemosOptions? _demosOptions;
+    private readonly DemosOptions _demosOptions;
+    private readonly MarkupSyntaxHighlighterFactory _highlighterFactory;
+    private readonly Decompiler _decompiler;
     private readonly string? _title;
 
     public DemoRunner(DemosOptions? demosOptions = null, string? title = null)
     {
-        _demosOptions = demosOptions;
+        _demosOptions = demosOptions ?? new();
         _title = title;
+        _decompiler = new Decompiler(_demosOptions);
+        _highlighterFactory = new MarkupSyntaxHighlighterFactory(_demosOptions);
     }
+
+    public void HighlightCode(string source, Language language = Language.CSharp)
+    {
+        try
+        {
+            string comment = language == Language.CSharp ?
+                $"//Decompiled using {_demosOptions.Theme.Name} with C# version {_demosOptions.LanguageVersion}{Environment.NewLine}"
+                : "";
+
+            AnsiConsole.Markup(
+                _highlighterFactory.GetSyntaxHighlighter(language)
+                    .GetHighlightedMarkup($"{comment}{source}"));
+        }
+        catch (Exception) { AnsiConsole.WriteLine(source); }
+    }
+
+    public void HighlightDecompiledCSharp(string methodName, string? fullTypeName = null) => HighlightCode(_decompiler.DecompileAsCSharp(methodName, fullTypeName));
+
+    public void HighlightDecompiledCSharp(MethodInfo method) => HighlightCode(_decompiler.DecompileAsCSharp(method));
+
+    public void HighlightDecompiledCSharp(Type type) => HighlightCode(_decompiler.DecompileAsCSharp(type));
 
     public void Run(string[]? args = null)
     {
@@ -33,14 +59,11 @@ public class DemoRunner
         if (args is not null)
             Extensions.CheckDebugger(args);
 
-        DemosOptions demosOptions = _demosOptions ?? new();
-        Decompiler decompiler = new(demosOptions);
-
         IEnumerable<IRunnable> demos =
             Assembly.GetCallingAssembly().GetTypes()
             .Where(t => !t.IsAbstract && !t.IsGenericTypeDefinition && typeof(IRunnable).IsAssignableFrom(t))
             .Select(t => (
-                Instance: CreateRunnable(t, decompiler),
+                Instance: CreateRunnable(t, this),
                 Order: t.GetCustomAttribute<OrderAttribute>()?.Value ?? int.MaxValue
                 )
             )
@@ -48,7 +71,7 @@ public class DemoRunner
             .Select(t => t.Instance)
             .ToList();
 
-        IEnumerable<IRunnable> builtInActions = [new ClearAction(), new ChangeThemeAction(demosOptions), new ChangeLanguageVersionAction(demosOptions), new ExitAction()];
+        IEnumerable<IRunnable> builtInActions = [new ClearAction(), new ChangeThemeAction(_demosOptions), new ChangeLanguageVersionAction(_demosOptions), new ExitAction()];
 
 
         var prompt =
@@ -76,7 +99,7 @@ public class DemoRunner
         }
     }
 
-    private static IRunnable CreateRunnable(Type type, Decompiler decompiler)
+    private static IRunnable CreateRunnable(Type type, DemoRunner demo)
     {
         var ctors = type.GetConstructors();
         if (ctors.Length != 1)
@@ -87,9 +110,9 @@ public class DemoRunner
         return ctorParams.Length switch
         {
             0 => (IRunnable)Activator.CreateInstance(type)!,
-            1 => ctorParams[0].ParameterType == typeof(Decompiler)
-                ? (IRunnable)ctor.Invoke([decompiler])
-                : throw new NotSupportedException($"Only parameter of type Decompiler is supported for constructor of arity 1 in {type.Name}"),
+            1 => ctorParams[0].ParameterType == typeof(DemoRunner)
+                ? (IRunnable)ctor.Invoke([demo])
+                : throw new NotSupportedException($"Only parameter of type DemoRunner is supported for constructor of arity 1 in {type.Name}"),
             _ => throw new NotSupportedException($"Only constructor of arity 0..1 is supported by {type.Name}")
         };
     }
@@ -146,7 +169,7 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
 
     public void Run()
     {
-        SyntaxNode parsedCode = SyntaxHighlighter.GetParsedCodeRoot(DEMO_CODE);
+        SyntaxNode parsedCode = CSharpHighlighter.GetParsedCodeRoot(DEMO_CODE);
 
         AnsiConsole.Clear();
 
@@ -241,7 +264,7 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
 
     private static Panel CreateDetailPanel(SyntaxTheme theme, SyntaxNode parsedCode)
     {
-        var markup = new SyntaxHighlighter(new() { Theme = theme })
+        var markup = new CSharpHighlighter(new() { Theme = theme })
             .GetHighlightedMarkup(parsedCode);
 
         var themeName = theme.Name;

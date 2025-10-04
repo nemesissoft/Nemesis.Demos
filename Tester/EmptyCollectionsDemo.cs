@@ -4,15 +4,15 @@ using Tester.Runtime;
 namespace Tester;
 
 [Order(109)]
-internal class EmptyCollectionsDemo(Decompiler decompiler) : IRunnable
+internal class EmptyCollectionsDemo(DemoRunner demo) : IRunnable
 {
     public void Run()
     {
-        decompiler.DecompileAsCSharp(Method.Of(Arrays));
+        demo.HighlightDecompiledCSharp(nameof(Arrays));
 
-        decompiler.DecompileAsCSharp(Method.Of(Collections));
+        demo.HighlightDecompiledCSharp(Method.Of(Collections));
 
-        decompiler.DecompileAsCSharp(Method.Of(CollectionExpressions));
+        demo.HighlightDecompiledCSharp(Method.Of(CollectionExpressions));
     }
 
     private static void Arrays()

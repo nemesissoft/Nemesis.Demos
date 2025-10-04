@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json.Nodes;
 using Nemesis.TextParsers;
+using Spectre.Console;
 
 namespace Nemesis.Demos;
 
@@ -15,7 +16,7 @@ public static class Extensions
         {
             action();
             using (ConsoleColors.ForeColor(ConsoleColor.DarkRed))
-                Console.WriteLine($"Expected exception '{typeof(TException)}' not captured");
+                AnsiConsole.WriteLine($"Expected exception '{typeof(TException)}' not captured");
         }
         //p⇒q ⟺ ¬(p ∧ ¬q)
         catch (TException e) when (!string.IsNullOrEmpty(errorMessagePart) && e.ToString().Contains(errorMessagePart, StringComparison.OrdinalIgnoreCase))
@@ -24,7 +25,7 @@ public static class Extensions
                 .Select(s => $"    {s}");
 
             using (ConsoleColors.ForeColor(ConsoleColor.Magenta))
-                Console.WriteLine($"EXPECTED with message for {actionText}:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
+                AnsiConsole.WriteLine($"EXPECTED with message for {actionText}:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
         }
         catch (TException e)
         {
@@ -32,12 +33,12 @@ public static class Extensions
                 .Select(s => $"    {s}");
 
             using (ConsoleColors.ForeColor(ConsoleColor.DarkGreen))
-                Console.WriteLine($"EXPECTED for {actionText}:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
+                AnsiConsole.WriteLine($"EXPECTED for {actionText}:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
         }
         catch (Exception e)
         {
             using (ConsoleColors.ForeColor(ConsoleColor.DarkRed))
-                Console.WriteLine($"Failed to capture error for '{actionText}' containing '{errorMessagePart}' instead error was {e.GetType().FullName}: {e}");
+                AnsiConsole.WriteLine($"Failed to capture error for '{actionText}' containing '{errorMessagePart}' instead error was {e.GetType().FullName}: {e}");
         }
     }
 
@@ -52,7 +53,7 @@ public static class Extensions
             _ => GetString(store, source)
         };
 
-        Console.WriteLine($"{prepend}{text}");
+        AnsiConsole.WriteLine($"{prepend}{text}");
         return source;
     }
 
@@ -105,11 +106,7 @@ public static class Extensions
 
     public static void CheckDebugger(string[] args)
     {
-        if (args.Length > 0 &&
-            args.Any(a => string.Equals(a, "/debug", StringComparison.OrdinalIgnoreCase)) &&
-            !Debugger.IsAttached)
-        {
+        if (args.Length > 0 && args.Any(a => string.Equals(a, "/debug", StringComparison.OrdinalIgnoreCase)) && !Debugger.IsAttached)
             Debugger.Launch();
-        }
     }
 }

@@ -1,13 +1,15 @@
-﻿namespace Tester;
+﻿using Spectre.Console;
+
+namespace Tester;
 
 [Order(1)]
-internal class PrimaryConstructors(Decompiler decompiler) : IRunnable
+internal class PrimaryConstructors(DemoRunner demo) : IRunnable
 {
     public void Run()
     {
         new Person("Mike", "Oldfield", new("UK", "London")).Dump();
 
-        decompiler.DecompileAsCSharp(typeof(Person));
+        demo.HighlightDecompiledCSharp(typeof(Person));
     }
 }
 
@@ -18,7 +20,7 @@ class Person(string name/*0. not exposed outside*/, string familyName, Address a
     public Address Address { get; } = address;
     //public readonly string name = name; //3. capture
 
-    public void Greet() => Console.WriteLine($"Hello, {name}!");
+    public void Greet() => AnsiConsole.WriteLine($"Hello, {name}!");
 }
 
 class Address(string country, string city)

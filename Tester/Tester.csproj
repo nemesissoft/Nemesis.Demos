@@ -11,8 +11,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Using Include="Nemesis.Demos" />
-		<Using Include="Nemesis.Demos.Decompiler" Static="true" />
+		<Using Include="Nemesis.Demos" />		
 		<Using Include="System.Buffers" />
 		<Using Include="System.Diagnostics" />
 		<Using Include="System.Globalization" />
