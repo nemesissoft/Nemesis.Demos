@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Nemesis.Demos.Highlighters;
 
@@ -28,7 +24,7 @@ internal sealed class JsonHighlighter(DemosOptions Options) : MarkupSyntaxHighli
                 foreach (var prop in element.EnumerateObject())
                 {
                     sb.Append(indentStr + "  ");
-                    sb.Append($"[{theme.String}]\"{Escape(prop.Name)}\"[/]");
+                    sb.Append($"[{theme.Type}]\"{Escape(prop.Name)}\"[/]");
                     sb.Append($" [{theme.PlainText}]:[/] ");
                     AppendValue(sb, prop.Value, theme, indent + 1);
                     sb.AppendLine();
@@ -65,5 +61,5 @@ internal sealed class JsonHighlighter(DemosOptions Options) : MarkupSyntaxHighli
                 sb.Append($"[{theme.Keyword}]null[/]");
                 break;
         }
-    }    
+    }
 }

@@ -4,9 +4,9 @@ using Tester.Runtime;
 namespace Tester;
 
 [Order(109)]
-internal class EmptyCollectionsDemo(DemoRunner demo) : IRunnable
+internal class EmptyCollectionsDemo(DemoRunner demo) : Runnable
 {
-    public void Run()
+    public override void Run()
     {
         demo.HighlightDecompiledCSharp(nameof(Arrays));
 

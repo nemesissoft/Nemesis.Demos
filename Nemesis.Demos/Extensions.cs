@@ -7,41 +7,6 @@ namespace Nemesis.Demos;
 
 public static class Extensions
 {
-    public static readonly string ConsoleLine = $"{Environment.NewLine}----------------------------------------{Environment.NewLine}";
-
-    public static void ExpectFailure<TException>(Action action, string? errorMessagePart = null,
-        [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
-    {
-        try
-        {
-            action();
-            using (ConsoleColors.ForeColor(ConsoleColor.DarkRed))
-                AnsiConsole.WriteLine($"Expected exception '{typeof(TException)}' not captured");
-        }
-        //p⇒q ⟺ ¬(p ∧ ¬q)
-        catch (TException e) when (!string.IsNullOrEmpty(errorMessagePart) && e.ToString().Contains(errorMessagePart, StringComparison.OrdinalIgnoreCase))
-        {
-            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
-                .Select(s => $"    {s}");
-
-            using (ConsoleColors.ForeColor(ConsoleColor.Magenta))
-                AnsiConsole.WriteLine($"EXPECTED with message for {actionText}:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
-        }
-        catch (TException e)
-        {
-            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
-                .Select(s => $"    {s}");
-
-            using (ConsoleColors.ForeColor(ConsoleColor.DarkGreen))
-                AnsiConsole.WriteLine($"EXPECTED for {actionText}:" + Environment.NewLine + string.Join(Environment.NewLine, lines));
-        }
-        catch (Exception e)
-        {
-            using (ConsoleColors.ForeColor(ConsoleColor.DarkRed))
-                AnsiConsole.WriteLine($"Failed to capture error for '{actionText}' containing '{errorMessagePart}' instead error was {e.GetType().FullName}: {e}");
-        }
-    }
-
     public static T Dump<T>(this T source, string? prepend = null)
     {
         var store = TextTransformer.Default;
@@ -102,11 +67,5 @@ public static class Extensions
             prepend
             );
         return source;
-    }
-
-    public static void CheckDebugger(string[] args)
-    {
-        if (args.Length > 0 && args.Any(a => string.Equals(a, "/debug", StringComparison.OrdinalIgnoreCase)) && !Debugger.IsAttached)
-            Debugger.Launch();
     }
 }

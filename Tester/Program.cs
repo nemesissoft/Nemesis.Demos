@@ -1,1 +1,1 @@
-﻿new DemoRunner(title:"Net 8.0").Run(args);
+﻿await new DemoRunner(title: "Net 8.0").Run(args);

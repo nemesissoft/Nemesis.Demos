@@ -2,13 +2,9 @@
 
 namespace Nemesis.Demos;
 
-public static class ConsoleColors
+internal static class ConsoleColors
 {
-    public static IDisposable ForeColor(Color color) => new ForeColorStruct(color);
-
-    public static IDisposable BackColor(Color color) => new BackColorStruct(color);
-
-    private readonly struct ForeColorStruct : IDisposable
+    internal readonly struct ForeColorStruct : IDisposable
     {
         private readonly Color _previousColor;
 
@@ -21,7 +17,7 @@ public static class ConsoleColors
         public void Dispose() => AnsiConsole.Foreground = _previousColor;
     }
 
-    private readonly struct BackColorStruct : IDisposable
+    internal readonly struct BackColorStruct : IDisposable
     {
         private readonly Color _previousColor;
 

@@ -1,8 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Text;
 using ICSharpCode.Decompiler.CSharp;
-using Spectre.Console;
-using System.Text;
+using Microsoft.CodeAnalysis;
 using Nemesis.Demos.Highlighters;
+using Spectre.Console;
 
 namespace Nemesis.Demos;
 public class DemoRunner
@@ -11,6 +11,7 @@ public class DemoRunner
     private readonly MarkupSyntaxHighlighterFactory _highlighterFactory;
     private readonly Decompiler _decompiler;
     private readonly string? _title;
+    private readonly IReadOnlyCollection<Type> _demoTypes;
 
     public DemoRunner(DemosOptions? demosOptions = null, string? title = null)
     {
@@ -18,6 +19,12 @@ public class DemoRunner
         _title = title;
         _decompiler = new Decompiler(_demosOptions);
         _highlighterFactory = new MarkupSyntaxHighlighterFactory(_demosOptions);
+
+        _demoTypes =
+            Assembly.GetCallingAssembly().GetTypes()
+            .Where(t => !t.IsAbstract && !t.IsGenericTypeDefinition && typeof(Runnable).IsAssignableFrom(t))
+            .ToList().AsReadOnly();
+
     }
 
     public void HighlightCode(string source, Language language = Language.CSharp)
@@ -41,7 +48,7 @@ public class DemoRunner
 
     public void HighlightDecompiledCSharp(Type type) => HighlightCode(_decompiler.DecompileAsCSharp(type));
 
-    public void Run(string[]? args = null)
+    public async Task Run(string[]? args = null)
     {
         Console.OutputEncoding = Encoding.UTF8;
 
@@ -57,25 +64,25 @@ public class DemoRunner
         }
 
         if (args is not null)
-            Extensions.CheckDebugger(args);
+            if (args.Length > 0 && args.Any(a => string.Equals(a, "/debug", StringComparison.OrdinalIgnoreCase)) && !Debugger.IsAttached)
+                Debugger.Launch();
 
-        IEnumerable<IRunnable> demos =
-            Assembly.GetCallingAssembly().GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsGenericTypeDefinition && typeof(IRunnable).IsAssignableFrom(t))
-            .Select(t => (
-                Instance: CreateRunnable(t, this),
-                Order: t.GetCustomAttribute<OrderAttribute>()?.Value ?? int.MaxValue
-                )
-            )
-            .OrderBy(tuple => tuple.Order)
-            .Select(t => t.Instance)
-            .ToList();
 
-        IEnumerable<IRunnable> builtInActions = [new ClearAction(), new ChangeThemeAction(_demosOptions), new ChangeLanguageVersionAction(_demosOptions), new ExitAction()];
+        var demos = _demoTypes
+              .Select(t => (
+                  Instance: CreateRunnable(t, this),
+                  Order: t.GetCustomAttribute<OrderAttribute>()?.Value ?? int.MaxValue
+                  )
+              )
+              .OrderBy(tuple => tuple.Order)
+              .Select(t => t.Instance)
+              .ToList();
+
+        IEnumerable<Runnable> builtInActions = [new ClearAction(), new ChangeThemeAction(_demosOptions), new ChangeLanguageVersionAction(_demosOptions), new ExitAction()];
 
 
         var prompt =
-            new SelectionPrompt<IRunnable>()
+            new SelectionPrompt<Runnable>()
                 .PageSize(40)
                 .WrapAround(true)
                 .UseConverter(s => s.Description)
@@ -86,11 +93,13 @@ public class DemoRunner
 
         while (true)
         {
-            var choice = AnsiConsole.Prompt(prompt);
+            Runnable choice = AnsiConsole.Prompt(prompt);
 
             try
             {
                 choice.Run();
+                if (choice is RunnableAsync runnableAsync)
+                    await runnableAsync.RunAsync();
             }
             catch (Exception e)
             {
@@ -99,7 +108,7 @@ public class DemoRunner
         }
     }
 
-    private static IRunnable CreateRunnable(Type type, DemoRunner demo)
+    private static Runnable CreateRunnable(Type type, DemoRunner demo)
     {
         var ctors = type.GetConstructors();
         if (ctors.Length != 1)
@@ -109,37 +118,90 @@ public class DemoRunner
         var ctorParams = ctor.GetParameters();
         return ctorParams.Length switch
         {
-            0 => (IRunnable)Activator.CreateInstance(type)!,
+            0 => (Runnable)Activator.CreateInstance(type)!,
             1 => ctorParams[0].ParameterType == typeof(DemoRunner)
-                ? (IRunnable)ctor.Invoke([demo])
+                ? (Runnable)ctor.Invoke([demo])
                 : throw new NotSupportedException($"Only parameter of type DemoRunner is supported for constructor of arity 1 in {type.Name}"),
             _ => throw new NotSupportedException($"Only constructor of arity 0..1 is supported by {type.Name}")
         };
     }
+
+    public static IDisposable ForeColor(Color color) => new ConsoleColors.ForeColorStruct(color);
+
+    public static IDisposable BackColor(Color color) => new ConsoleColors.BackColorStruct(color);
 }
 
-public interface IRunnable
+public abstract class Runnable
 {
-    void Run();
+    public abstract void Run();
 
-    string Description => GetType().Name;
+    public virtual string Description => GetType().Name;
+
+    /// <summary>
+    /// Adds a horizontal rule line.
+    /// </summary>
+    /// <param name="text">Optional text to display inside the rule.</param>
+    /// <param name="color">Optional color for the rule (default: white).</param>
+    protected static void DrawLine(string? text = null, Color? color = null)
+    {
+        var rule = text is null ? new Rule() : new Rule(text);
+        rule.Style = new Style(color ?? Color.White);
+        AnsiConsole.Write(rule);
+    }
+
+    protected static void ExpectFailure<TException>(Action action, string? errorMessagePart = null,
+        [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
+    {
+        try
+        {
+            action();
+            AnsiConsole.MarkupLineInterpolated($"[bold maroon]Expected exception '{typeof(TException)}' not captured[/]");
+        }
+        //p⇒q ⟺ ¬(p ∧ ¬q)
+        catch (TException e) when (!string.IsNullOrEmpty(errorMessagePart) && e.ToString().Contains(errorMessagePart, StringComparison.OrdinalIgnoreCase))
+        {
+            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
+                .Select(s => $"    {s}");
+            AnsiConsole.MarkupLineInterpolated($"[bold fuchsia]EXPECTED with message for {actionText}:{Environment.NewLine}{string.Join(Environment.NewLine, lines)}[/]");
+        }
+        catch (TException e)
+        {
+            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
+                .Select(s => $"    {s}");
+            AnsiConsole.MarkupLineInterpolated($"[bold green]EXPECTED for {actionText}:{Environment.NewLine}{string.Join(Environment.NewLine, lines)}[/]");
+        }
+        catch (Exception e)
+        {
+            AnsiConsole.MarkupLineInterpolated($"[bold red]Failed to capture error for '{actionText}' containing '{errorMessagePart}' instead error was {e.GetType().FullName}: {e}[/]");
+        }
+    }
+}
+
+public abstract class RunnableAsync : Runnable
+{
+    public abstract Task RunAsync();
 }
 
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class OrderAttribute(int value) : Attribute { public int Value => value; }
 
-record NoOpAction(string Description) : IRunnable { public void Run() { } }
-
-class ClearAction : IRunnable
+class NoOpAction(string description) : Runnable
 {
-    public void Run() => AnsiConsole.Clear();
+    public override void Run() { }
 
-    public string Description => "Clear";
+    public override string Description => description;
 }
 
-record ChangeThemeAction(DemosOptions Options) : IRunnable
+class ClearAction : Runnable
 {
-    public string Description => "Change theme";
+    public override void Run() => AnsiConsole.Clear();
+
+    public override string Description => "Clear";
+}
+
+class ChangeThemeAction(DemosOptions Options) : Runnable
+{
+    public override string Description => "Change theme";
 
     const string DEMO_CODE = """
             using System;
@@ -167,7 +229,7 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
             }
             """;
 
-    public void Run()
+    public override void Run()
     {
         SyntaxNode parsedCode = CSharpHighlighter.GetParsedCodeRoot(DEMO_CODE);
 
@@ -309,9 +371,9 @@ record ChangeThemeAction(DemosOptions Options) : IRunnable
     }
 }
 
-record ChangeLanguageVersionAction(DemosOptions Options) : IRunnable
+class ChangeLanguageVersionAction(DemosOptions Options) : Runnable
 {
-    public void Run()
+    public override void Run()
     {
         var (selectedVersion, _) = AnsiConsole.Prompt(
             new SelectionPrompt<(LanguageVersion Version, bool IsCurrent)>()
@@ -329,16 +391,16 @@ record ChangeLanguageVersionAction(DemosOptions Options) : IRunnable
         AnsiConsole.MarkupLine($"[yellow]Language version changed to {selectedVersion}![/]");
     }
 
-    public string Description => "Change decompiler language version";
+    public override string Description => "Change decompiler language version";
 }
 
-class ExitAction : IRunnable
+class ExitAction : Runnable
 {
-    public void Run()
+    public override void Run()
     {
         if (AnsiConsole.Confirm("[red]Are you sure you want to quit?[/]"))
             Environment.Exit(0);
     }
 
-    public string Description => "Exit";
+    public override string Description => "Exit";
 }

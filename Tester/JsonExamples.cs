@@ -9,19 +9,25 @@ using static Nemesis.Demos.Extensions;
 namespace Tester;
 
 [Order(102)]
-internal partial class JsonExamples(DemoRunner demo) : IRunnable
+internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
 {
-    public void Run()
+    public override void Run()
     {
-        Required();
-        MissingProperty();
-        ResolverChain();
-        JsonSourceGenerationOptions_NewOptions();
-        DisableReflection_ForAot();
-        PopulateReadOnlyMembers();
-        NewTypesSupport();
-        OptionImmutability();
-        NewsInJsonNode();
+        Action[] actions = [Required, MissingProperty, ResolverChain, JsonSourceGenerationOptions_NewOptions, DisableReflection_ForAot, PopulateReadOnlyMembers, NewTypesSupport, OptionImmutability, NewsInJsonNode];
+
+        foreach (var action in actions)
+        {
+            DrawLine(action.Method.Name);
+            action();
+        }
+    }
+
+    public override async Task RunAsync()
+    {
+        DrawLine("Single");
+        await JsonNodeSingleAsync();
+        DrawLine("Multi");
+        await JsonNodeMultiAsync();
     }
 
     private void HighlightJson(string json, string? prepend = null)
@@ -232,13 +238,9 @@ internal partial class JsonExamples(DemoRunner demo) : IRunnable
 
         var jsonArray = new JsonArray(1, 2, 3, 2);
         IEnumerable<int> values = jsonArray.GetValues<int>().Where(i => i == 2);
-
-
-        SingleAsync().GetAwaiter().GetResult();
-        MultiAsync().GetAwaiter().GetResult();
     }
 
-    private async Task SingleAsync()
+    private async Task JsonNodeSingleAsync()
     {
         var text = """{"Name" : "Mike", "Age" : 39, "Prop" : { "NestedProp" : 42 } }"""u8.ToArray();
         using var stream = new MemoryStream(text);
@@ -246,7 +248,7 @@ internal partial class JsonExamples(DemoRunner demo) : IRunnable
         HighlightJson(node?.ToJsonString() ?? "{}");
     }
 
-    private async Task MultiAsync()
+    private async Task JsonNodeMultiAsync()
     {
         using var client = new HttpClient();
         IAsyncEnumerable<Book?> books = client

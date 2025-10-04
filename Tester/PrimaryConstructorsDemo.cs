@@ -3,9 +3,9 @@
 namespace Tester;
 
 [Order(1)]
-internal class PrimaryConstructors(DemoRunner demo) : IRunnable
+internal class PrimaryConstructors(DemoRunner demo) : Runnable
 {
-    public void Run()
+    public override void Run()
     {
         new Person("Mike", "Oldfield", new("UK", "London")).Dump();
 
