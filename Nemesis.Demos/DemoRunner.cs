@@ -5,7 +5,7 @@ using Nemesis.Demos.Highlighters;
 using Spectre.Console;
 
 namespace Nemesis.Demos;
-public class DemoRunner
+public partial class DemoRunner
 {
     private readonly DemosOptions _demosOptions;
     private readonly MarkupSyntaxHighlighterFactory _highlighterFactory;
@@ -126,84 +126,25 @@ public class DemoRunner
         };
     }
 
-    public static IDisposable ForeColor(Color color) => new ConsoleColors.ForeColorStruct(color);
-
-    public static IDisposable BackColor(Color color) => new ConsoleColors.BackColorStruct(color);
-}
-
-public abstract class Runnable
-{
-    public abstract void Run();
-
-    public virtual string Description => GetType().Name;
-
-    /// <summary>
-    /// Adds a horizontal rule line.
-    /// </summary>
-    /// <param name="text">Optional text to display inside the rule.</param>
-    /// <param name="color">Optional color for the rule (default: white).</param>
-    protected static void DrawLine(string? text = null, Color? color = null)
+    private class NoOpAction(string description) : Runnable
     {
-        var rule = text is null ? new Rule() : new Rule(text);
-        rule.Style = new Style(color ?? Color.White);
-        AnsiConsole.Write(rule);
+        public override void Run() { }
+
+        public override string Description => description;
     }
 
-    protected static void ExpectFailure<TException>(Action action, string? errorMessagePart = null,
-        [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
+    private class ClearAction : Runnable
     {
-        try
-        {
-            action();
-            AnsiConsole.MarkupLineInterpolated($"[bold maroon]Expected exception '{typeof(TException)}' not captured[/]");
-        }
-        //p⇒q ⟺ ¬(p ∧ ¬q)
-        catch (TException e) when (!string.IsNullOrEmpty(errorMessagePart) && e.ToString().Contains(errorMessagePart, StringComparison.OrdinalIgnoreCase))
-        {
-            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
-                .Select(s => $"    {s}");
-            AnsiConsole.MarkupLineInterpolated($"[bold fuchsia]EXPECTED with message for {actionText}:{Environment.NewLine}{string.Join(Environment.NewLine, lines)}[/]");
-        }
-        catch (TException e)
-        {
-            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
-                .Select(s => $"    {s}");
-            AnsiConsole.MarkupLineInterpolated($"[bold green]EXPECTED for {actionText}:{Environment.NewLine}{string.Join(Environment.NewLine, lines)}[/]");
-        }
-        catch (Exception e)
-        {
-            AnsiConsole.MarkupLineInterpolated($"[bold red]Failed to capture error for '{actionText}' containing '{errorMessagePart}' instead error was {e.GetType().FullName}: {e}[/]");
-        }
+        public override void Run() => AnsiConsole.Clear();
+
+        public override string Description => "Clear";
     }
-}
 
-public abstract class RunnableAsync : Runnable
-{
-    public abstract Task RunAsync();
-}
+    private class ChangeThemeAction(DemosOptions Options) : Runnable
+    {
+        public override string Description => "Change theme";
 
-[AttributeUsage(AttributeTargets.Class)]
-public sealed class OrderAttribute(int value) : Attribute { public int Value => value; }
-
-class NoOpAction(string description) : Runnable
-{
-    public override void Run() { }
-
-    public override string Description => description;
-}
-
-class ClearAction : Runnable
-{
-    public override void Run() => AnsiConsole.Clear();
-
-    public override string Description => "Clear";
-}
-
-class ChangeThemeAction(DemosOptions Options) : Runnable
-{
-    public override string Description => "Change theme";
-
-    const string DEMO_CODE = """
+        const string DEMO_CODE = """
             using System;
 
             // This is a single-line comment.
@@ -229,178 +170,179 @@ class ChangeThemeAction(DemosOptions Options) : Runnable
             }
             """;
 
-    public override void Run()
-    {
-        SyntaxNode parsedCode = CSharpHighlighter.GetParsedCodeRoot(DEMO_CODE);
+        public override void Run()
+        {
+            SyntaxNode parsedCode = CSharpHighlighter.GetParsedCodeRoot(DEMO_CODE);
 
-        AnsiConsole.Clear();
+            AnsiConsole.Clear();
 
-        var state = new SelectionState<ThemeMeta>(
-            SyntaxTheme.All.Select(t => new ThemeMeta(t.Theme, IsCurrent: Equals(Options.Theme, t.Theme))).ToList()
-            );
-        var console = AnsiConsole.Console;
+            var state = new SelectionState<ThemeMeta>(
+                SyntaxTheme.All.Select(t => new ThemeMeta(t.Theme, IsCurrent: Equals(Options.Theme, t.Theme))).ToList()
+                );
+            var console = AnsiConsole.Console;
 
-        SyntaxTheme? result = AnsiConsole.Live(CreateLayout(state, parsedCode))
-            .AutoClear(true)
-            .Start(ctx =>
-            {
-                ctx.UpdateTarget(CreateLayout(state, parsedCode));
-
-                while (true)
+            SyntaxTheme? result = AnsiConsole.Live(CreateLayout(state, parsedCode))
+                .AutoClear(true)
+                .Start(ctx =>
                 {
-                    ConsoleKeyInfo? key = console.Input.ReadKey(intercept: true);
+                    ctx.UpdateTarget(CreateLayout(state, parsedCode));
 
-                    if (!key.HasValue)// If the terminal doesn't support reading keys, or the key is null, we break (or continue)
+                    while (true)
                     {
-                        Thread.Sleep(50); // Prevent burning CPU if ReadKey somehow returns null rapidly
-                        continue;
-                    }
-                    else
-                    {
-                        var oldIndex = state.SelectedIndex;
+                        ConsoleKeyInfo? key = console.Input.ReadKey(intercept: true);
 
-
-                        switch (key.Value.Key)
+                        if (!key.HasValue)// If the terminal doesn't support reading keys, or the key is null, we break (or continue)
                         {
-                            case ConsoleKey.UpArrow: state.SelectPrev(); break;
-                            case ConsoleKey.LeftArrow: state.SelectPrev(); break;
-
-                            case ConsoleKey.DownArrow: state.SelectNext(); break;
-                            case ConsoleKey.RightArrow: state.SelectNext(); break;
-
-                            case ConsoleKey.Home: state.SelectFirst(); break;
-
-                            case ConsoleKey.End: state.SelectLast(); break;
-
-                            case ConsoleKey.Enter: return state.SelectedOption.Theme;
-
-                            case ConsoleKey.Escape: return null;
+                            Thread.Sleep(50); // Prevent burning CPU if ReadKey somehow returns null rapidly
+                            continue;
                         }
+                        else
+                        {
+                            var oldIndex = state.SelectedIndex;
 
-                        if (oldIndex != state.SelectedIndex)
-                            ctx.UpdateTarget(CreateLayout(state, parsedCode));
+
+                            switch (key.Value.Key)
+                            {
+                                case ConsoleKey.UpArrow: state.SelectPrev(); break;
+                                case ConsoleKey.LeftArrow: state.SelectPrev(); break;
+
+                                case ConsoleKey.DownArrow: state.SelectNext(); break;
+                                case ConsoleKey.RightArrow: state.SelectNext(); break;
+
+                                case ConsoleKey.Home: state.SelectFirst(); break;
+
+                                case ConsoleKey.End: state.SelectLast(); break;
+
+                                case ConsoleKey.Enter: return state.SelectedOption.Theme;
+
+                                case ConsoleKey.Escape: return null;
+                            }
+
+                            if (oldIndex != state.SelectedIndex)
+                                ctx.UpdateTarget(CreateLayout(state, parsedCode));
+                        }
                     }
-                }
-            });
-        if (result is not null)
+                });
+            if (result is not null)
+            {
+                Options.Theme = result;
+                AnsiConsole.MarkupLine($"[yellow]Theme changed to {result.Name}![/]");
+            }
+        }
+
+        private static Layout CreateLayout(SelectionState<ThemeMeta> state, SyntaxNode parsedCode) =>
+            new Layout("Root")
+                .SplitColumns(
+                    new Layout("SelectionPanel", CreateSelectionPanel(state)).Size(30),
+                    new Layout("DetailPanel", CreateDetailPanel(state.SelectedOption.Theme, parsedCode))
+                );
+
+        private static Panel CreateSelectionPanel(SelectionState<ThemeMeta> state)
         {
-            Options.Theme = result;
-            AnsiConsole.MarkupLine($"[yellow]Theme changed to {result.Name}![/]");
+            var sb = new StringBuilder();
+
+            sb.AppendLine("[yellow]Use Up, Down, Home and End to select, [green]Enter[/] to confirm or [red]Esc[/] to cancel.[/]");
+            sb.AppendLine();
+
+            for (int i = 0; i < state.Options.Count; i++)
+            {
+                var meta = state.Options[i];
+
+                string text = meta.Theme.Name;
+
+                text = meta.IsCurrent ? $"[underline]{text}[/]" : text;
+
+                if (i == state.SelectedIndex)
+                    sb.AppendLine($"[black on blue]> {text} <[/]"); // Highlight the selected option
+                else
+                    sb.AppendLine($"  {text}");
+            }
+
+            var selectionContent = new Markup(sb.ToString());
+
+            return new Panel(selectionContent)
+                .Header("[bold white]Themes[/]")
+                .Expand();
+        }
+
+        private static Panel CreateDetailPanel(SyntaxTheme theme, SyntaxNode parsedCode)
+        {
+            var markup = new CSharpHighlighter(new() { Theme = theme })
+                .GetHighlightedMarkup(parsedCode);
+
+            var themeName = theme.Name;
+            if (themeName.EndsWith("Light"))
+                themeName = themeName[..^"Light".Length] + Emoji.Known.SunWithFace;
+            else if (themeName.EndsWith("Dark"))
+                themeName = themeName[..^"Dark".Length] + Emoji.Known.NewMoon;
+
+            return new Panel(new Markup(markup))
+                .Header($"[bold white]Preview for {themeName}[/]")
+                .Expand();
+        }
+
+        private record ThemeMeta(SyntaxTheme Theme, bool IsCurrent);
+
+        private class SelectionState<T>
+        {
+            public IReadOnlyList<T> Options { get; }
+            public int SelectedIndex { get; private set; } = 0;
+            public T SelectedOption => Options[SelectedIndex];
+
+            public SelectionState(IReadOnlyList<T> options)
+            {
+                if (options == null || options.Count == 0)
+                    throw new ArgumentNullException(nameof(options), "options should contain at least 1 element");
+                Options = options;
+            }
+
+            public void SelectPrev() => SelectedIndex = SelectedIndex switch
+            {
+                > 0 => SelectedIndex - 1,
+                _ => Options.Count - 1,// wrap to last
+            };
+
+            public void SelectNext() => SelectedIndex = SelectedIndex < Options.Count - 1
+                ? SelectedIndex + 1
+                : 0;// wrap to first
+
+            public void SelectFirst() => SelectedIndex = 0;
+
+            public void SelectLast() => SelectedIndex = Options.Count - 1;
         }
     }
 
-    private static Layout CreateLayout(SelectionState<ThemeMeta> state, SyntaxNode parsedCode) =>
-        new Layout("Root")
-            .SplitColumns(
-                new Layout("SelectionPanel", CreateSelectionPanel(state)).Size(30),
-                new Layout("DetailPanel", CreateDetailPanel(state.SelectedOption.Theme, parsedCode))
+    private class ChangeLanguageVersionAction(DemosOptions Options) : Runnable
+    {
+        public override void Run()
+        {
+            var (selectedVersion, _) = AnsiConsole.Prompt(
+                new SelectionPrompt<(LanguageVersion Version, bool IsCurrent)>()
+                    .Title("[green]Select a language version:[/]")
+                    .WrapAround(true)
+                    .PageSize(30)
+                    .AddChoices(
+                        Enum.GetValues<LanguageVersion>().Select(lv => (Version: lv, IsCurrent: Equals(Options.LanguageVersion, lv)))
+                    )
+                    .UseConverter(t => t.IsCurrent ? $"[green]{t.Version} **[/]" : t.Version.ToString())
+                    .EnableSearch()
             );
 
-    private static Panel CreateSelectionPanel(SelectionState<ThemeMeta> state)
-    {
-        var sb = new StringBuilder();
-
-        sb.AppendLine("[yellow]Use Up, Down, Home and End to select, [green]Enter[/] to confirm or [red]Esc[/] to cancel.[/]");
-        sb.AppendLine();
-
-        for (int i = 0; i < state.Options.Count; i++)
-        {
-            var meta = state.Options[i];
-
-            string text = meta.Theme.Name;
-
-            text = meta.IsCurrent ? $"[underline]{text}[/]" : text;
-
-            if (i == state.SelectedIndex)
-                sb.AppendLine($"[black on blue]> {text} <[/]"); // Highlight the selected option
-            else
-                sb.AppendLine($"  {text}");
+            Options.LanguageVersion = selectedVersion;
+            AnsiConsole.MarkupLine($"[yellow]Language version changed to {selectedVersion}![/]");
         }
 
-        var selectionContent = new Markup(sb.ToString());
-
-        return new Panel(selectionContent)
-            .Header("[bold white]Themes[/]")
-            .Expand();
+        public override string Description => "Change decompiler language version";
     }
 
-    private static Panel CreateDetailPanel(SyntaxTheme theme, SyntaxNode parsedCode)
+    private class ExitAction : Runnable
     {
-        var markup = new CSharpHighlighter(new() { Theme = theme })
-            .GetHighlightedMarkup(parsedCode);
-
-        var themeName = theme.Name;
-        if (themeName.EndsWith("Light"))
-            themeName = themeName[..^"Light".Length] + Emoji.Known.SunWithFace;
-        else if (themeName.EndsWith("Dark"))
-            themeName = themeName[..^"Dark".Length] + Emoji.Known.NewMoon;
-
-        return new Panel(new Markup(markup))
-            .Header($"[bold white]Preview for {themeName}[/]")
-            .Expand();
-    }
-
-    private record ThemeMeta(SyntaxTheme Theme, bool IsCurrent);
-
-    private class SelectionState<T>
-    {
-        public IReadOnlyList<T> Options { get; }
-        public int SelectedIndex { get; private set; } = 0;
-        public T SelectedOption => Options[SelectedIndex];
-
-        public SelectionState(IReadOnlyList<T> options)
+        public override void Run()
         {
-            if (options == null || options.Count == 0)
-                throw new ArgumentNullException(nameof(options), "options should contain at least 1 element");
-            Options = options;
+            if (AnsiConsole.Confirm("[red]Are you sure you want to quit?[/]"))
+                Environment.Exit(0);
         }
 
-        public void SelectPrev() => SelectedIndex = SelectedIndex switch
-        {
-            > 0 => SelectedIndex - 1,
-            _ => Options.Count - 1,// wrap to last
-        };
-
-        public void SelectNext() => SelectedIndex = SelectedIndex < Options.Count - 1
-            ? SelectedIndex + 1
-            : 0;// wrap to first
-
-        public void SelectFirst() => SelectedIndex = 0;
-
-        public void SelectLast() => SelectedIndex = Options.Count - 1;
+        public override string Description => "Exit";
     }
-}
-
-class ChangeLanguageVersionAction(DemosOptions Options) : Runnable
-{
-    public override void Run()
-    {
-        var (selectedVersion, _) = AnsiConsole.Prompt(
-            new SelectionPrompt<(LanguageVersion Version, bool IsCurrent)>()
-                .Title("[green]Select a language version:[/]")
-                .WrapAround(true)
-                .PageSize(30)
-                .AddChoices(
-                    Enum.GetValues<LanguageVersion>().Select(lv => (Version: lv, IsCurrent: Equals(Options.LanguageVersion, lv)))
-                )
-                .UseConverter(t => t.IsCurrent ? $"[green]{t.Version} **[/]" : t.Version.ToString())
-                .EnableSearch()
-        );
-
-        Options.LanguageVersion = selectedVersion;
-        AnsiConsole.MarkupLine($"[yellow]Language version changed to {selectedVersion}![/]");
-    }
-
-    public override string Description => "Change decompiler language version";
-}
-
-class ExitAction : Runnable
-{
-    public override void Run()
-    {
-        if (AnsiConsole.Confirm("[red]Are you sure you want to quit?[/]"))
-            Environment.Exit(0);
-    }
-
-    public override string Description => "Exit";
 }

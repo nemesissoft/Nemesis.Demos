@@ -7,7 +7,7 @@ internal class PrimaryConstructors(DemoRunner demo) : Runnable
 {
     public override void Run()
     {
-        new Person("Mike", "Oldfield", new("UK", "London")).Dump();
+        demo.Dump(new Person("Mike", "Oldfield", new("UK", "London")));
 
         demo.HighlightDecompiledCSharp(typeof(Person));
     }

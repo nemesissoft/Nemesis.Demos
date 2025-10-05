@@ -5,7 +5,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Nemesis.Demos.Highlighters;
 using Spectre.Console;
-using static Nemesis.Demos.Extensions;
 namespace Tester;
 
 [Order(102)]
@@ -37,10 +36,9 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
         demo.HighlightCode(json, Language.Json);
     }
 
-    private static void Required()
+    private void Required()
     {
-        JsonSerializer.Deserialize("""{"Name" : "Mike", "Age" : 39 }""", MyContext.Default.Person)
-            .Dump();
+        demo.Dump(JsonSerializer.Deserialize("""{"Name" : "Mike", "Age" : 39 }""", MyContext.Default.Person));
 
         ExpectFailure<JsonException>(
             () => JsonSerializer.Deserialize("""{"Name" : "Mike" }""", MyContext.Default.Person),
@@ -135,9 +133,9 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
         //[JsonSourceGenerationOptions(JsonSerializerDefaults.Web, AllowTrailingCommas = true, DefaultBufferSize = 10)]
     }
 
-    private static void DisableReflection_ForAot()
+    private void DisableReflection_ForAot()
     {
-        JsonSerializer.IsReflectionEnabledByDefault.Dump("IsReflectionEnabledByDefault: ");
+        demo.Dump(JsonSerializer.IsReflectionEnabledByDefault, "IsReflectionEnabledByDefault: ");
         JsonSerializer.Serialize(42);
 
         //<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
@@ -148,15 +146,11 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
     }
 
 
-
-
-    private static void PopulateReadOnlyMembers()
+    private void PopulateReadOnlyMembers()
     {
-        JsonSerializer.Deserialize<ReadOnlyMember>("""{ "Values" : [1,2,3] }""")
-            .Dump("ReadOnlyMember = ");
+        demo.Dump(JsonSerializer.Deserialize<ReadOnlyMember>("""{ "Values" : [1,2,3] }"""));
 
-        JsonSerializer.Deserialize<PopulatingMember>("""{ "Populate" : [11,22,33], "Replace" : [111,222,333] }""")
-            .Dump("PopulatingMember = ");
+        demo.Dump(JsonSerializer.Deserialize<PopulatingMember>("""{ "Populate" : [11,22,33], "Replace" : [111,222,333] }"""));
     }
 
     public class ReadOnlyMember
@@ -175,7 +169,7 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
         public List<int> Populate { get; } = [1, 2, 3];
 
         [JsonObjectCreationHandling(JsonObjectCreationHandling.Replace)]
-        public List<int> Replace { get; } = [4, 5, 6];
+        public List<int> Replace { get; set; } = [4, 5, 6];
 
         public override string ToString() => $"{nameof(Populate)}[{string.Join(", ", Populate)}] ; {nameof(Replace)}[{string.Join(", ", Replace)}]";
     }
@@ -229,11 +223,12 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
     private void NewsInJsonNode()
     {
         var node = JsonNode.Parse("""{"Name" : "Mike", "Age" : 39, "Prop" : { "NestedProp" : 42 } }""")!;
-        var other = node.DeepClone();
+        HighlightJson(node.ToJsonString(), "Original:\n");
 
+        var other = node.DeepClone();
         HighlightJson(other.ToJsonString(), "Cloned:\n");
 
-        JsonNode.DeepEquals(node, other).Dump("Are same = ");
+        demo.Dump(JsonNode.DeepEquals(node, other), "Are same");
 
 
         var jsonArray = new JsonArray(1, 2, 3, 2);
