@@ -8,23 +8,23 @@ public abstract class Runnable
 
     public virtual string Description => GetType().Name;
 
-    protected static IDisposable ForeColor(Color color) => new ConsoleColors.ForeColorStruct(color);
+    public static IDisposable ForeColor(Color color) => new ConsoleColors.ForeColorStruct(color);
 
-    protected static IDisposable BackColor(Color color) => new ConsoleColors.BackColorStruct(color);
+    public static IDisposable BackColor(Color color) => new ConsoleColors.BackColorStruct(color);
 
     /// <summary>
     /// Adds a horizontal rule line.
     /// </summary>
     /// <param name="text">Optional text to display inside the rule.</param>
     /// <param name="color">Optional color for the rule (default: white).</param>
-    protected static void DrawLine(string? text = null, Color? color = null)
+    public static void DrawLine(string? text = null, Color? color = null)
     {
         var rule = text is null ? new Rule() : new Rule(text);
         rule.Style = new Style(color ?? Color.White);
         AnsiConsole.Write(rule);
     }
 
-    protected static void ExpectFailure<TException>(Action action, string? errorMessagePart = null,
+    public static void ExpectFailure<TException>(Action action, string? errorMessagePart = null,
         [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
     {
         try
