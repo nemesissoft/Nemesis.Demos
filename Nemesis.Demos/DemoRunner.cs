@@ -9,7 +9,6 @@ public partial class DemoRunner
 {
     private readonly DemosOptions _demosOptions;
     private readonly MarkupSyntaxHighlighterFactory _highlighterFactory;
-    private readonly Decompiler _decompiler;
     private readonly string? _title;
     private readonly IReadOnlyCollection<Type> _demoTypes;
 
@@ -17,7 +16,6 @@ public partial class DemoRunner
     {
         _demosOptions = demosOptions ?? new();
         _title = title;
-        _decompiler = new Decompiler(_demosOptions);
         _highlighterFactory = new MarkupSyntaxHighlighterFactory(_demosOptions);
 
         _demoTypes =
@@ -31,22 +29,42 @@ public partial class DemoRunner
     {
         try
         {
-            string comment = language == Language.CSharp ?
-                $"//Decompiled using {_demosOptions.Theme.Name} with C# version {_demosOptions.LanguageVersion}{Environment.NewLine}"
-                : "";
-
-            AnsiConsole.Markup(
-                _highlighterFactory.GetSyntaxHighlighter(language)
-                    .GetHighlightedMarkup($"{comment}{source}"));
+            AnsiConsole.Markup(_highlighterFactory.GetSyntaxHighlighter(language).GetHighlightedMarkup(source));
         }
         catch (Exception) { AnsiConsole.WriteLine(source); }
     }
 
-    public void HighlightDecompiledCSharp(string methodName, string? fullTypeName = null) => HighlightCode(_decompiler.DecompileAsCSharp(methodName, fullTypeName));
+    public void HighlightDecompiledCSharp(string methodName, params LanguageVersion[] languageVersions)
+    {
+        var defaultVersion = _demosOptions.DefaultDecompilerLanguageVersion;
+        if (languageVersions.Length == 0)
+            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(methodName, defaultVersion));
+        else
+            foreach (var version in languageVersions)
+                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(methodName, version));
+    }
 
-    public void HighlightDecompiledCSharp(MethodInfo method) => HighlightCode(_decompiler.DecompileAsCSharp(method));
+    public void HighlightDecompiledCSharp(MethodInfo method, params LanguageVersion[] languageVersions)
+    {
+        var defaultVersion = _demosOptions.DefaultDecompilerLanguageVersion;
+        if (languageVersions.Length == 0)
+            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(method, defaultVersion));
+        else
+            foreach (var version in languageVersions)
+                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(method, version));
+    }
 
-    public void HighlightDecompiledCSharp(Type type) => HighlightCode(_decompiler.DecompileAsCSharp(type));
+    public void HighlightDecompiledCSharp(Type type, params LanguageVersion[] languageVersions)
+    {
+        var defaultVersion = _demosOptions.DefaultDecompilerLanguageVersion;
+        if (languageVersions.Length == 0)
+            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(type, defaultVersion));
+        else
+            foreach (var version in languageVersions)
+                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(type, version));
+    }
+
+    private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
 
     public async Task Run(string[]? args = null)
     {
@@ -318,17 +336,17 @@ public partial class DemoRunner
         {
             var (selectedVersion, _) = AnsiConsole.Prompt(
                 new SelectionPrompt<(LanguageVersion Version, bool IsCurrent)>()
-                    .Title("[green]Select a language version:[/]")
+                    .Title("[green]Select default decompiler language version:[/]")
                     .WrapAround(true)
                     .PageSize(30)
                     .AddChoices(
-                        Enum.GetValues<LanguageVersion>().Select(lv => (Version: lv, IsCurrent: Equals(Options.LanguageVersion, lv)))
+                        Enum.GetValues<LanguageVersion>().Select(lv => (Version: lv, IsCurrent: Equals(Options.DefaultDecompilerLanguageVersion, lv)))
                     )
                     .UseConverter(t => t.IsCurrent ? $"[green]{t.Version} **[/]" : t.Version.ToString())
                     .EnableSearch()
             );
 
-            Options.LanguageVersion = selectedVersion;
+            Options.DefaultDecompilerLanguageVersion = selectedVersion;
             AnsiConsole.MarkupLine($"[yellow]Language version changed to {selectedVersion}![/]");
         }
 

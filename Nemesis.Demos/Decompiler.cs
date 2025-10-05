@@ -1,33 +1,33 @@
 ﻿using ICSharpCode.Decompiler;
+using ICSharpCode.Decompiler.CSharp;
 using ICSharpCode.Decompiler.TypeSystem;
 using Spectre.Console;
 
 namespace Nemesis.Demos;
 
-internal class Decompiler(DemosOptions Options)
+internal static class Decompiler
 {
-    public string DecompileAsCSharp(string methodName, string? fullTypeName = null)
+    public static string DecompileAsCSharp(string methodName, LanguageVersion languageVersion)
     {
-        if (string.IsNullOrEmpty(fullTypeName))
-            fullTypeName = new StackFrame(1).GetMethod()?.DeclaringType?.AssemblyQualifiedName;
+        var fullTypeName = new StackFrame(1).GetMethod()?.DeclaringType?.AssemblyQualifiedName;
 
         if (string.IsNullOrEmpty(fullTypeName))
-            throw new ArgumentException("Cannot determine declaring type", nameof(fullTypeName));
+            throw new ArgumentException($"Cannot determine declaring type for {methodName}");
 
-        var type = Type.GetType(fullTypeName, false) ?? throw new ArgumentException($"Type '{fullTypeName}' not found", nameof(fullTypeName));
+        var type = Type.GetType(fullTypeName, false) ?? throw new InvalidOperationException($"Type '{fullTypeName}' not found");
         var methodInfo = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
 
         return methodInfo == null
             ? throw new ArgumentException($"Method '{methodName}' not found in type '{fullTypeName}'", nameof(methodName))
-            : DecompileAsCSharp(methodInfo);
+            : DecompileAsCSharp(methodInfo, languageVersion);
     }
 
-    public string DecompileAsCSharp(MethodInfo method)
+    public static string DecompileAsCSharp(MethodInfo method, LanguageVersion languageVersion)
     {
         var path = method.DeclaringType!.Assembly.Location;
         var fullTypeName = new FullTypeName(method.DeclaringType!.FullName);
 
-        var decompiler = new ICSharpCode.Decompiler.CSharp.CSharpDecompiler(path, new DecompilerSettings(Options.LanguageVersion));
+        var decompiler = new CSharpDecompiler(path, new DecompilerSettings(languageVersion));
 
         var typeInfo = decompiler.TypeSystem.FindType(fullTypeName).GetDefinition()!;
         var @params = method.GetParameters();
@@ -44,12 +44,12 @@ internal class Decompiler(DemosOptions Options)
         return decompiler.DecompileAsString(methodToken);
     }
 
-    public string DecompileAsCSharp(Type type)
+    public static string DecompileAsCSharp(Type type, LanguageVersion languageVersion)
     {
         var path = type.Assembly.Location;
         var fullTypeName = new FullTypeName(type.FullName);
 
-        var decompiler = new ICSharpCode.Decompiler.CSharp.CSharpDecompiler(path, new DecompilerSettings(Options.LanguageVersion));
+        var decompiler = new CSharpDecompiler(path, new DecompilerSettings(languageVersion));
 
         return decompiler.DecompileTypeAsString(fullTypeName);
     }

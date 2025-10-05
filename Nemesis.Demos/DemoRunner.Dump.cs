@@ -33,8 +33,12 @@ public partial class DemoRunner
         if (obj is XNode xml)
             return new Markup(_highlighterFactory.GetSyntaxHighlighter(Language.Xml).GetHighlightedMarkup(xml.ToString()));
 
-        static Markup GetFormattableMarkup(IFormattable formattable, string? format) =>
-            new(Markup.Escape(formattable.ToString(format, CultureInfo.InvariantCulture)));
+        static Markup GetFormattableMarkup(IFormattable formattable, string? format, string? style = null) =>
+            new(
+                (style is null ? "" : $"[{style}]") +
+                Markup.Escape(formattable.ToString(format, CultureInfo.InvariantCulture)) +
+                (style is null ? "" : "[/]")
+               );
 
 
         // Temporals
@@ -45,14 +49,29 @@ public partial class DemoRunner
             return GetFormattableMarkup(ts, "c");
 
         // Primitive / simple
-        if (obj is IFormattable formattable)
-            return GetFormattableMarkup(formattable, null);
 
         if (obj is string text)
             return new Markup($"[{theme.String}]\"{Markup.Escape(text)}\"[/]");
 
+        if (obj is char c)
+            return new Markup($"[{theme.String}]'{Markup.Escape(c.ToString())}'[/]");
+
         if (obj is bool b)
             return new Markup($"[{theme.Keyword}]{(b ? "true" : "false")}[/]");
+
+        if (obj is byte or sbyte or
+                   short or ushort or
+                   int or uint or
+                   long or ulong or
+                   nint or nuint or
+                   Half or float or double or decimal or
+                   Int128 or UInt128)
+            return GetFormattableMarkup((IFormattable)obj, null, theme.Number);
+
+        if (obj is IFormattable formattable)
+            return GetFormattableMarkup(formattable, null);
+
+
 
         var type = obj.GetType();
 
@@ -66,7 +85,7 @@ public partial class DemoRunner
             var table = new Table()
             {
                 Border = TableBorder.Rounded,
-                Title = new TableTitle($"[bold]Dictionary<{type.GenericTypeArguments[0].Name}, {type.GenericTypeArguments[1].Name}>[/]")
+                Title = new TableTitle($"[{theme.PlainText}]Dictionary<{type.GenericTypeArguments[0].Name}, {type.GenericTypeArguments[1].Name}>[/]")
             }
                 .AddColumns("Key", "Value");
 
@@ -82,7 +101,7 @@ public partial class DemoRunner
             var table = new Table()
             {
                 Border = TableBorder.Rounded,
-                Title = new TableTitle($"[bold]Enumerable<{type.GetElementType()?.Name ?? type.GenericTypeArguments.FirstOrDefault()?.Name ?? "object"}>[/]")
+                Title = new TableTitle($"[{theme.PlainText}]Enumerable<{type.GetElementType()?.Name ?? type.GenericTypeArguments.FirstOrDefault()?.Name ?? "object"}>[/]")
             }
                 .AddColumns("Index", "Value");
 
@@ -101,7 +120,7 @@ public partial class DemoRunner
         var objectTable = new Table()
         {
             Border = TableBorder.Rounded,
-            Title = new TableTitle($"[bold]{type.Name}[/]")
+            Title = new TableTitle($"[{theme.PlainText}]{type.Name}[/]")
         }
             .AddColumns("Property", "Value");
         foreach (var prop in props)
@@ -123,18 +142,5 @@ public partial class DemoRunner
             }
         }
         return objectTable;
-    }
-
-    public Span<T> Dump<T>(Span<T> source, string? title = null) => Dump(source.ToArray(), title);
-
-    public ReadOnlySpan<T> Dump<T>(ReadOnlySpan<T> source, string? title = null) => Dump(source.ToArray(), title);
-
-    public Span<TNumber> DumpBinary<TNumber>(Span<TNumber> source, string? title = null) where TNumber : IBinaryInteger<TNumber>, IFormattable
-    {
-        Dump(
-            string.Join(", ", source.ToArray().Select(b => b.ToString("B8", CultureInfo.InvariantCulture))),
-            title
-            );
-        return source;
     }
 }

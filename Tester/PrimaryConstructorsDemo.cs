@@ -1,4 +1,5 @@
-﻿using Spectre.Console;
+﻿using ICSharpCode.Decompiler.CSharp;
+using Spectre.Console;
 
 namespace Tester;
 
@@ -9,7 +10,7 @@ internal class PrimaryConstructors(DemoRunner demo) : Runnable
     {
         demo.Dump(new Person("Mike", "Oldfield", new("UK", "London")));
 
-        demo.HighlightDecompiledCSharp(typeof(Person));
+        demo.HighlightDecompiledCSharp(typeof(Person), [LanguageVersion.CSharp10_0, LanguageVersion.CSharp12_0]);
     }
 }
 
