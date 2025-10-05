@@ -47,9 +47,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="Fonts\*.flf">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<EmbeddedResource Include="Fonts\**\*.*" />
 	</ItemGroup>
 
 </Project>

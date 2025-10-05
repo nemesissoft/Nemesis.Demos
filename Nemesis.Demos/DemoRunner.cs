@@ -74,7 +74,10 @@ public partial class DemoRunner
 
         if (!string.IsNullOrWhiteSpace(_title))
         {
-            var font = FigletFont.Load("Fonts/univers.flf");
+            var library = Assembly.GetExecutingAssembly().GetName().Name;
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"{library}.Fonts.univers.flf")
+                ?? throw new InvalidOperationException("Embedded Figlet font not found.");
+            var font = FigletFont.Load(stream);
 
             AnsiConsole.Write(
                 new FigletText(font, _title)
