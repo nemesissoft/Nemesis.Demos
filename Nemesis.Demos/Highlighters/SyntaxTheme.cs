@@ -1,23 +1,17 @@
-﻿using Spectre.Console;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
+using Spectre.Console;
 
 namespace Nemesis.Demos.Highlighters;
 
 public record SyntaxTheme(string Name, string Keyword, string Type, string String, string Number, string Comment, string PlainText)
 {
-    public static readonly List<(string Name, SyntaxTheme Theme)> All;
-
-    static SyntaxTheme()
-    {
-        All = (from p in typeof(SyntaxTheme).GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
-               where p.PropertyType == typeof(SyntaxTheme)
-               let value = (SyntaxTheme)p.GetValue(null)!
-               orderby value.Name
-               select (value.Name, value)
-            ).ToList();
-    }
-
-    //public override string? ToString() => Name.ToString();
+    public static readonly IReadOnlyList<(string Name, SyntaxTheme Theme)> All =
+        (from p in typeof(SyntaxTheme).GetProperties(BindingFlags.Public | BindingFlags.Static)
+         where p.PropertyType == typeof(SyntaxTheme)
+         let value = (SyntaxTheme)p.GetValue(null)!
+         orderby value.Name
+         select (value.Name, value)
+        ).ToList().AsReadOnly();
 
     public static SyntaxTheme Dracula => new("Dracula",
       Keyword: "pink1 bold",

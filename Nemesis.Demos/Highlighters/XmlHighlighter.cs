@@ -5,9 +5,9 @@ namespace Nemesis.Demos.Highlighters;
 
 internal sealed class XmlHighlighter(DemosOptions Options) : MarkupSyntaxHighlighter
 {
-    public override string GetHighlightedMarkup(string xml)
+    public override string GetHighlightedMarkup(string code)
     {
-        var doc = XDocument.Parse(xml);
+        var doc = XDocument.Parse(code);
         var sb = new StringBuilder();
         AppendElement(sb, doc.Root!, Options.Theme, indent: 0);
         return sb.AppendLine().ToString();
@@ -60,5 +60,5 @@ internal sealed class XmlHighlighter(DemosOptions Options) : MarkupSyntaxHighlig
         sb.Append($"[{theme.Keyword}]{Escape(element.Name.LocalName)}[/]");
         sb.Append($"[{theme.PlainText}]>[/]");
         sb.AppendLine();
-    }    
+    }
 }

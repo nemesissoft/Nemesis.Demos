@@ -5,9 +5,9 @@ namespace Nemesis.Demos.Highlighters;
 
 internal sealed class JsonHighlighter(DemosOptions Options) : MarkupSyntaxHighlighter
 {
-    public override string GetHighlightedMarkup(string json)
+    public override string GetHighlightedMarkup(string code)
     {
-        using var doc = JsonDocument.Parse(json);
+        using var doc = JsonDocument.Parse(code);
         var sb = new StringBuilder();
         AppendValue(sb, doc.RootElement, Options.Theme, indent: 0);
         return sb.AppendLine().ToString();

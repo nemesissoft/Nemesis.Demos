@@ -66,7 +66,9 @@ public partial class DemoRunner
 
     private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
 
+#pragma warning disable S2190 // Loops and recursions should not be infinite
     public async Task Run(string[]? args = null)
+#pragma warning restore S2190 // Loops and recursions should not be infinite
     {
         Console.OutputEncoding = Encoding.UTF8;
 
@@ -81,9 +83,8 @@ public partial class DemoRunner
             );
         }
 
-        if (args is not null)
-            if (args.Length > 0 && args.Any(a => string.Equals(a, "/debug", StringComparison.OrdinalIgnoreCase)) && !Debugger.IsAttached)
-                Debugger.Launch();
+        if (args is not null && args.Length > 0 && args.Any(a => string.Equals(a, "/debug", StringComparison.OrdinalIgnoreCase)) && !Debugger.IsAttached)
+            Debugger.Launch();
 
 
         var demos = _demoTypes
@@ -111,7 +112,7 @@ public partial class DemoRunner
 
         while (true)
         {
-            Runnable choice = AnsiConsole.Prompt(prompt);
+            Runnable choice = await AnsiConsole.PromptAsync(prompt);
 
             try
             {
@@ -144,21 +145,21 @@ public partial class DemoRunner
         };
     }
 
-    private class NoOpAction(string description) : Runnable
+    private sealed class NoOpAction(string description) : Runnable
     {
         public override void Run() { }
 
         public override string Description => description;
     }
 
-    private class ClearAction : Runnable
+    private sealed class ClearAction : Runnable
     {
         public override void Run() => AnsiConsole.Clear();
 
         public override string Description => "Clear";
     }
 
-    private class ChangeThemeAction(DemosOptions Options) : Runnable
+    private sealed class ChangeThemeAction(DemosOptions Options) : Runnable
     {
         public override string Description => "Change theme";
 
@@ -209,22 +210,18 @@ public partial class DemoRunner
                     {
                         ConsoleKeyInfo? key = console.Input.ReadKey(intercept: true);
 
-                        if (!key.HasValue)// If the terminal doesn't support reading keys, or the key is null, we break (or continue)
-                        {
-                            Thread.Sleep(50); // Prevent burning CPU if ReadKey somehow returns null rapidly
-                            continue;
-                        }
+                        if (!key.HasValue)// If the terminal doesn't support reading keys, or the key is null, we break (or continue)                        
+                            Thread.Sleep(50); // Prevent burning CPU if ReadKey somehow returns null rapidly                         
                         else
                         {
                             var oldIndex = state.SelectedIndex;
 
-
                             switch (key.Value.Key)
                             {
-                                case ConsoleKey.UpArrow: state.SelectPrev(); break;
+                                case ConsoleKey.UpArrow:
                                 case ConsoleKey.LeftArrow: state.SelectPrev(); break;
 
-                                case ConsoleKey.DownArrow: state.SelectNext(); break;
+                                case ConsoleKey.DownArrow:
                                 case ConsoleKey.RightArrow: state.SelectNext(); break;
 
                                 case ConsoleKey.Home: state.SelectFirst(); break;
@@ -299,9 +296,9 @@ public partial class DemoRunner
                 .Expand();
         }
 
-        private record ThemeMeta(SyntaxTheme Theme, bool IsCurrent);
+        private sealed record ThemeMeta(SyntaxTheme Theme, bool IsCurrent);
 
-        private class SelectionState<T>
+        private sealed class SelectionState<T>
         {
             public IReadOnlyList<T> Options { get; }
             public int SelectedIndex { get; private set; } = 0;
@@ -330,7 +327,7 @@ public partial class DemoRunner
         }
     }
 
-    private class ChangeLanguageVersionAction(DemosOptions Options) : Runnable
+    private sealed class ChangeLanguageVersionAction(DemosOptions Options) : Runnable
     {
         public override void Run()
         {
@@ -353,7 +350,7 @@ public partial class DemoRunner
         public override string Description => "Change decompiler language version";
     }
 
-    private class ExitAction : Runnable
+    private sealed class ExitAction : Runnable
     {
         public override void Run()
         {

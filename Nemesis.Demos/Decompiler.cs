@@ -15,7 +15,9 @@ internal static class Decompiler
             throw new ArgumentException($"Cannot determine declaring type for {methodName}");
 
         var type = Type.GetType(fullTypeName, false) ?? throw new InvalidOperationException($"Type '{fullTypeName}' not found");
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
         var methodInfo = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
         return methodInfo == null
             ? throw new ArgumentException($"Method '{methodName}' not found in type '{fullTypeName}'", nameof(methodName))
@@ -38,7 +40,7 @@ internal static class Decompiler
             m.Parameters.Count == @params.Length &&
             m.Parameters.Zip(@params)
                 .Select(t => t.First.Type.FullName == t.Second.ParameterType.FullName)
-                .All(b => b == true)
+                .All(b => b)
         ).MetadataToken;
 
         return decompiler.DecompileAsString(methodToken);
