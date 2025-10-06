@@ -7,21 +7,31 @@ namespace Nemesis.Demos;
 
 internal static class Decompiler
 {
-    public static string DecompileAsCSharp(string methodName, LanguageVersion languageVersion)
+    public static string DecompileAsCSharp(string methodName, LanguageVersion languageVersion, object? instanceOrType = null)
     {
-        var fullTypeName = new StackFrame(1).GetMethod()?.DeclaringType?.AssemblyQualifiedName;
+        Type type = instanceOrType switch
+        {
+            Type t => t,
+            { } obj => obj.GetType(),
+            null => GetTypeFromStackTrace() ?? throw new InvalidOperationException($"Cannot determine declaring type for {methodName}")
+        };
 
-        if (string.IsNullOrEmpty(fullTypeName))
-            throw new ArgumentException($"Cannot determine declaring type for {methodName}");
-
-        var type = Type.GetType(fullTypeName, false) ?? throw new InvalidOperationException($"Type '{fullTypeName}' not found");
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
         var methodInfo = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
         return methodInfo == null
-            ? throw new ArgumentException($"Method '{methodName}' not found in type '{fullTypeName}'", nameof(methodName))
+            ? throw new ArgumentException($"Method '{methodName}' not found in type '{type.AssemblyQualifiedName}'", nameof(methodName))
             : DecompileAsCSharp(methodInfo, languageVersion);
+
+        static Type? GetTypeFromStackTrace()
+        {
+            var demosNamespace = typeof(Decompiler).Namespace ?? throw new InvalidOperationException("Demos namespace cannot be determined");
+            var stack = new StackTrace();
+            return stack.GetFrames()?
+                .Select(f => f.GetMethod()?.DeclaringType)
+                .FirstOrDefault(t => t is not null
+                            && t.Namespace is not null
+                            && !t.Namespace.StartsWith(demosNamespace));
+        }
     }
 
     public static string DecompileAsCSharp(MethodInfo method, LanguageVersion languageVersion)

@@ -18,14 +18,7 @@
 		<Using Include="System.Numerics" />
 		<Using Include="System.Reflection" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Nemesis.Essentials.TypeMeta.Sources" Version="1.2.2">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
-	
+		
 	<ItemGroup>
 		<ProjectReference Include="..\Nemesis.Demos\Nemesis.Demos.csproj" />
 	</ItemGroup>

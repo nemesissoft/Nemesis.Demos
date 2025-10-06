@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using Tester.Runtime;
 
 namespace Tester;
 
@@ -10,9 +9,9 @@ internal class EmptyCollectionsDemo(DemoRunner demo) : Runnable
     {
         demo.HighlightDecompiledCSharp(nameof(Arrays));
 
-        demo.HighlightDecompiledCSharp(Method.Of(Collections));
+        demo.HighlightDecompiledCSharp(nameof(Collections));
 
-        demo.HighlightDecompiledCSharp(Method.Of(CollectionExpressions));
+        demo.HighlightDecompiledCSharp(nameof(CollectionExpressions));
     }
 
     private static void Arrays()
