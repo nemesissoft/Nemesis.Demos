@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Nemesis.Demos.Highlighters;
 
-internal sealed class JsonHighlighter(DemosOptions Options) : MarkupSyntaxHighlighter
+internal sealed class JsonHighlighter(DemoOptions Options) : MarkupSyntaxHighlighter
 {
     public override string GetHighlightedMarkup(string code)
     {

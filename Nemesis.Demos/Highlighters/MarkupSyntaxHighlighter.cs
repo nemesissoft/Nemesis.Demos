@@ -7,7 +7,7 @@ public abstract class MarkupSyntaxHighlighter
     protected static string Escape(string text) => text.Replace("[", "[[").Replace("]", "]]");
 }
 
-public class MarkupSyntaxHighlighterFactory(DemosOptions Options)
+public class MarkupSyntaxHighlighterFactory(DemoOptions Options)
 {
     public MarkupSyntaxHighlighter GetSyntaxHighlighter(Language language)
     {

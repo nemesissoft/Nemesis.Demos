@@ -1,8 +1,14 @@
-﻿using Spectre.Console;
+﻿using System.Collections;
+using System.Text.Json.Nodes;
+using System.Xml.Linq;
+using ICSharpCode.Decompiler.CSharp;
+using Nemesis.Demos.Highlighters;
+using Spectre.Console;
+using Spectre.Console.Rendering;
 
 namespace Nemesis.Demos;
 
-public abstract class Runnable
+public abstract class Runnable(DemoRunner demo)
 {
     public abstract void Run();
 
@@ -50,9 +56,187 @@ public abstract class Runnable
             AnsiConsole.MarkupLineInterpolated($"[bold red]Failed to capture error for '{actionText}' containing '{errorMessagePart}' instead error was {e.GetType().FullName}: {e}[/]");
         }
     }
+
+    public void HighlightCode(string source, Language language = Language.CSharp)
+    {
+        try
+        {
+            AnsiConsole.Markup(demo.HighlighterFactory.GetSyntaxHighlighter(language).GetHighlightedMarkup(source));
+        }
+        catch (Exception) { AnsiConsole.WriteLine(source); }
+    }
+
+    public void HighlightDecompiledCSharp(string methodName, params LanguageVersion[] languageVersions)
+    {
+        var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
+        if (languageVersions.Length == 0)
+            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(methodName, defaultVersion));
+        else
+            foreach (var version in languageVersions)
+                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(methodName, version));
+    }
+
+    public void HighlightDecompiledCSharp(MethodInfo method, params LanguageVersion[] languageVersions)
+    {
+        var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
+        if (languageVersions.Length == 0)
+            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(method, defaultVersion));
+        else
+            foreach (var version in languageVersions)
+                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(method, version));
+    }
+
+    public void HighlightDecompiledCSharp(Type type, params LanguageVersion[] languageVersions)
+    {
+        var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
+        if (languageVersions.Length == 0)
+            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(type, defaultVersion));
+        else
+            foreach (var version in languageVersions)
+                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(type, version));
+    }
+
+    private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
+
+
+    public T Dump<T>(T source, string? title = null)
+    {
+        var renderable = ToRenderable(source);
+        if (title != null)
+            AnsiConsole.MarkupLine($"[bold underline]{Markup.Escape(title)}[/]");
+
+        AnsiConsole.Write(renderable);
+        AnsiConsole.WriteLine();
+
+        return source;
+    }
+
+    private IRenderable ToRenderable(object? obj)
+    {
+        var theme = demo.DemoOptions.Theme;
+
+        if (obj is null)
+            return new Markup("[grey italic]null[/]");
+
+        if (obj is JsonObject json)
+            return new Markup(demo.HighlighterFactory.GetSyntaxHighlighter(Language.Json).GetHighlightedMarkup(json.ToString()));
+
+        if (obj is XNode xml)
+            return new Markup(demo.HighlighterFactory.GetSyntaxHighlighter(Language.Xml).GetHighlightedMarkup(xml.ToString()));
+
+        static Markup GetFormattableMarkup(IFormattable formattable, string? format, string? style = null) =>
+            new(
+                (style is null ? "" : $"[{style}]") +
+                Markup.Escape(formattable.ToString(format, CultureInfo.InvariantCulture)) +
+                (style is null ? "" : "[/]")
+               );
+
+
+        // Temporals
+        if (obj is DateTime or DateTimeOffset or DateOnly or TimeOnly)
+            return GetFormattableMarkup((IFormattable)obj, "O");
+
+        if (obj is TimeSpan ts)
+            return GetFormattableMarkup(ts, "c");
+
+        // Primitive / simple
+
+        if (obj is string text)
+            return new Markup($"[{theme.String}]\"{Markup.Escape(text)}\"[/]");
+
+        if (obj is char c)
+            return new Markup($"[{theme.String}]'{Markup.Escape(c.ToString())}'[/]");
+
+        if (obj is bool b)
+            return new Markup($"[{theme.Keyword}]{(b ? "true" : "false")}[/]");
+
+        if (obj is byte or sbyte or
+                   short or ushort or
+                   int or uint or
+                   long or ulong or
+                   nint or nuint or
+                   Half or float or double or decimal or
+                   Int128 or UInt128)
+            return GetFormattableMarkup((IFormattable)obj, null, theme.Number);
+
+        if (obj is IFormattable formattable)
+            return GetFormattableMarkup(formattable, null);
+
+
+
+        var type = obj.GetType();
+
+        // Enums
+        if (type.IsEnum)
+            return new Markup($"[{theme.Type}]{obj}[/]");
+
+        // IDictionary
+        if (obj is IDictionary dict)
+        {
+            var table = new Table()
+            {
+                Border = TableBorder.Rounded,
+                Title = new TableTitle($"[{theme.PlainText}]Dictionary<{type.GenericTypeArguments[0].Name}, {type.GenericTypeArguments[1].Name}>[/]")
+            }
+                .AddColumns("Key", "Value");
+
+            foreach (DictionaryEntry entry in dict)
+                table.AddRow(ToRenderable(entry.Key), ToRenderable(entry.Value));
+
+            return table;
+        }
+
+        // IEnumerable (but not string)
+        if (obj is IEnumerable enumerable)
+        {
+            var table = new Table()
+            {
+                Border = TableBorder.Rounded,
+                Title = new TableTitle($"[{theme.PlainText}]Enumerable<{type.GetElementType()?.Name ?? type.GenericTypeArguments.FirstOrDefault()?.Name ?? "object"}>[/]")
+            }
+                .AddColumns("Index", "Value");
+
+            int i = 0;
+            foreach (var item in enumerable)
+                table.AddRow(new Markup($"[grey]{i++}[/]"), ToRenderable(item));
+
+            return table;
+        }
+
+        // Complex object → show public properties
+        var props = type.GetProperties()
+            .Where(p => p.CanRead)
+            .ToArray();
+
+        var objectTable = new Table()
+        {
+            Border = TableBorder.Rounded,
+            Title = new TableTitle($"[{theme.PlainText}]{type.Name}[/]")
+        }
+            .AddColumns("Property", "Value");
+        foreach (var prop in props)
+        {
+            try
+            {
+                var value = prop.GetValue(obj);
+                objectTable.AddRow(
+                    new Markup($"[bold]{prop.Name}[/]"),
+                    ToRenderable(value)
+                );
+            }
+            catch (Exception ex)
+            {
+                objectTable.AddRow(
+                    new Markup($"[bold]{prop.Name}[/]"),
+                    new Markup($"[red]{ex.Message}[/]")
+                );
+            }
+        }
+        return objectTable;
+    }
 }
 
-public abstract class RunnableAsync : Runnable
+public abstract class RunnableAsync(DemoRunner demo) : Runnable(demo)
 {
     public abstract Task RunAsync();
 }

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Nemesis.Demos.Highlighters;
 
-internal sealed class CSharpHighlighter(DemosOptions Options) : MarkupSyntaxHighlighter
+internal sealed class CSharpHighlighter(DemoOptions Options) : MarkupSyntaxHighlighter
 {
     public override string GetHighlightedMarkup(string code) => GetHighlightedMarkup(GetParsedCodeRoot(code));
 

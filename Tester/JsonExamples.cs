@@ -8,7 +8,7 @@ using Spectre.Console;
 namespace Tester;
 
 [Order(102)]
-internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
+internal partial class JsonExamples(DemoRunner demo) : RunnableAsync(demo)
 {
     public override void Run()
     {
@@ -33,12 +33,12 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
     {
         if (prepend is not null)
             AnsiConsole.Write(prepend);
-        demo.HighlightCode(json, Language.Json);
+        HighlightCode(json, Language.Json);
     }
 
     private void Required()
     {
-        demo.Dump(JsonSerializer.Deserialize("""{"Name" : "Mike", "Age" : 39 }""", MyContext.Default.Person));
+        Dump(JsonSerializer.Deserialize("""{"Name" : "Mike", "Age" : 39 }""", MyContext.Default.Person));
 
         ExpectFailure<JsonException>(
             () => JsonSerializer.Deserialize("""{"Name" : "Mike" }""", MyContext.Default.Person),
@@ -135,7 +135,7 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
 
     private void DisableReflection_ForAot()
     {
-        demo.Dump(JsonSerializer.IsReflectionEnabledByDefault, "IsReflectionEnabledByDefault: ");
+        Dump(JsonSerializer.IsReflectionEnabledByDefault, "IsReflectionEnabledByDefault: ");
         JsonSerializer.Serialize(42);
 
         //<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
@@ -148,9 +148,9 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
 
     private void PopulateReadOnlyMembers()
     {
-        demo.Dump(JsonSerializer.Deserialize<ReadOnlyMember>("""{ "Values" : [1,2,3] }"""));
+        Dump(JsonSerializer.Deserialize<ReadOnlyMember>("""{ "Values" : [1,2,3] }"""));
 
-        demo.Dump(JsonSerializer.Deserialize<PopulatingMember>("""{ "Populate" : [11,22,33], "Replace" : [111,222,333] }"""));
+        Dump(JsonSerializer.Deserialize<PopulatingMember>("""{ "Populate" : [11,22,33], "Replace" : [111,222,333] }"""));
     }
 
     public class ReadOnlyMember
@@ -228,7 +228,7 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync
         var other = node.DeepClone();
         HighlightJson(other.ToJsonString(), "Cloned:\n");
 
-        demo.Dump(JsonNode.DeepEquals(node, other), "Are same");
+        Dump(JsonNode.DeepEquals(node, other), "Are same");
 
 
         var jsonArray = new JsonArray(1, 2, 3, 2);

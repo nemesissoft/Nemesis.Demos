@@ -3,7 +3,7 @@ using System.Xml.Linq;
 
 namespace Nemesis.Demos.Highlighters;
 
-internal sealed class XmlHighlighter(DemosOptions Options) : MarkupSyntaxHighlighter
+internal sealed class XmlHighlighter(DemoOptions Options) : MarkupSyntaxHighlighter
 {
     public override string GetHighlightedMarkup(string code)
     {

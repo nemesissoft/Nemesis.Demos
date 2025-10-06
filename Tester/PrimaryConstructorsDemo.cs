@@ -4,13 +4,13 @@ using Spectre.Console;
 namespace Tester;
 
 [Order(1)]
-internal class PrimaryConstructors(DemoRunner demo) : Runnable
+internal class PrimaryConstructors(DemoRunner demo) : Runnable(demo)
 {
     public override void Run()
     {
-        demo.Dump(new Person("Mike", "Oldfield", new("UK", "London")));
+        Dump(new Person("Mike", "Oldfield", new("UK", "London")));
 
-        demo.HighlightDecompiledCSharp(typeof(Person), [LanguageVersion.CSharp10_0, LanguageVersion.CSharp12_0]);
+        HighlightDecompiledCSharp(typeof(Person), [LanguageVersion.CSharp10_0, LanguageVersion.CSharp12_0]);
     }
 }
 

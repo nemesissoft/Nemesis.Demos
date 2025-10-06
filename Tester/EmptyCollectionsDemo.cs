@@ -3,15 +3,13 @@
 namespace Tester;
 
 [Order(109)]
-internal class EmptyCollectionsDemo(DemoRunner demo) : Runnable
+internal class EmptyCollectionsDemo(DemoRunner demo) : Runnable(demo)
 {
     public override void Run()
     {
-        demo.HighlightDecompiledCSharp(nameof(Arrays));
-
-        demo.HighlightDecompiledCSharp(nameof(Collections));
-
-        demo.HighlightDecompiledCSharp(nameof(CollectionExpressions));
+        HighlightDecompiledCSharp(nameof(Arrays));
+        HighlightDecompiledCSharp(nameof(Collections));
+        HighlightDecompiledCSharp(nameof(CollectionExpressions));
     }
 
     private static void Arrays()

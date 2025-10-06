@@ -7,16 +7,16 @@ using Spectre.Console;
 namespace Nemesis.Demos;
 public partial class DemoRunner
 {
-    private readonly DemosOptions _demosOptions;
-    private readonly MarkupSyntaxHighlighterFactory _highlighterFactory;
+    public DemoOptions DemoOptions { get; }
+    public MarkupSyntaxHighlighterFactory HighlighterFactory { get; }
     private readonly string? _title;
     private readonly IReadOnlyCollection<Type> _demoTypes;
 
-    public DemoRunner(DemosOptions? demosOptions = null, string? title = null)
+    public DemoRunner(DemoOptions? demosOptions = null, string? title = null)
     {
-        _demosOptions = demosOptions ?? new();
+        DemoOptions = demosOptions ?? new();
         _title = title;
-        _highlighterFactory = new MarkupSyntaxHighlighterFactory(_demosOptions);
+        HighlighterFactory = new MarkupSyntaxHighlighterFactory(DemoOptions);
 
         _demoTypes =
             Assembly.GetCallingAssembly().GetTypes()
@@ -24,47 +24,6 @@ public partial class DemoRunner
             .ToList().AsReadOnly();
 
     }
-
-    public void HighlightCode(string source, Language language = Language.CSharp)
-    {
-        try
-        {
-            AnsiConsole.Markup(_highlighterFactory.GetSyntaxHighlighter(language).GetHighlightedMarkup(source));
-        }
-        catch (Exception) { AnsiConsole.WriteLine(source); }
-    }
-
-    public void HighlightDecompiledCSharp(string methodName, params LanguageVersion[] languageVersions)
-    {
-        var defaultVersion = _demosOptions.DefaultDecompilerLanguageVersion;
-        if (languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(methodName, defaultVersion));
-        else
-            foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(methodName, version));
-    }
-
-    public void HighlightDecompiledCSharp(MethodInfo method, params LanguageVersion[] languageVersions)
-    {
-        var defaultVersion = _demosOptions.DefaultDecompilerLanguageVersion;
-        if (languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(method, defaultVersion));
-        else
-            foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(method, version));
-    }
-
-    public void HighlightDecompiledCSharp(Type type, params LanguageVersion[] languageVersions)
-    {
-        var defaultVersion = _demosOptions.DefaultDecompilerLanguageVersion;
-        if (languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(type, defaultVersion));
-        else
-            foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(type, version));
-    }
-
-    private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
 
 #pragma warning disable S2190 // Loops and recursions should not be infinite
     public async Task Run(string[]? args = null)
@@ -100,7 +59,7 @@ public partial class DemoRunner
               .Select(t => t.Instance)
               .ToList();
 
-        IEnumerable<Runnable> builtInActions = [new ClearAction(), new ChangeThemeAction(_demosOptions), new ChangeLanguageVersionAction(_demosOptions), new ExitAction()];
+        IEnumerable<Runnable> builtInActions = [new ClearAction(this), new ChangeThemeAction(DemoOptions, this), new ChangeLanguageVersionAction(DemoOptions, this), new ExitAction(this)];
 
 
         var prompt =
@@ -108,8 +67,8 @@ public partial class DemoRunner
                 .PageSize(40)
                 .WrapAround(true)
                 .UseConverter(s => s.Description)
-                .AddChoiceGroup(new NoOpAction("Demos"), demos)
-                .AddChoiceGroup(new NoOpAction("Built in"), builtInActions)
+                .AddChoiceGroup(new NoOpAction("Demos", this), demos)
+                .AddChoiceGroup(new NoOpAction("Built in", this), builtInActions)
                 .EnableSearch()
             ;
 
@@ -148,21 +107,21 @@ public partial class DemoRunner
         };
     }
 
-    private sealed class NoOpAction(string description) : Runnable
+    private sealed class NoOpAction(string description, DemoRunner demo) : Runnable(demo)
     {
         public override void Run() { }
 
         public override string Description => description;
     }
 
-    private sealed class ClearAction : Runnable
+    private sealed class ClearAction(DemoRunner demo) : Runnable(demo)
     {
         public override void Run() => AnsiConsole.Clear();
 
         public override string Description => "Clear";
     }
 
-    private sealed class ChangeThemeAction(DemosOptions Options) : Runnable
+    private sealed class ChangeThemeAction(DemoOptions Options, DemoRunner demo) : Runnable(demo)
     {
         public override string Description => "Change theme";
 
@@ -330,7 +289,7 @@ public partial class DemoRunner
         }
     }
 
-    private sealed class ChangeLanguageVersionAction(DemosOptions Options) : Runnable
+    private sealed class ChangeLanguageVersionAction(DemoOptions Options, DemoRunner demo) : Runnable(demo)
     {
         public override void Run()
         {
@@ -353,7 +312,7 @@ public partial class DemoRunner
         public override string Description => "Change decompiler language version";
     }
 
-    private sealed class ExitAction : Runnable
+    private sealed class ExitAction(DemoRunner demo) : Runnable(demo)
     {
         public override void Run()
         {
