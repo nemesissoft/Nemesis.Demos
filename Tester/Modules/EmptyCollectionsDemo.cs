@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace Tester;
+namespace Tester.Modules;
 
 [Order(109)]
 internal class EmptyCollectionsDemo(DemoRunner demo) : Runnable(demo)

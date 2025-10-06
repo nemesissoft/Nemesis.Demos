@@ -101,12 +101,19 @@ public abstract class Runnable(DemoRunner demo)
 
     public T Dump<T>(T source, string? title = null)
     {
-        var renderable = ToRenderable(source);
-        if (title != null)
-            AnsiConsole.MarkupLine($"[bold underline]{Markup.Escape(title)}[/]");
+        try
+        {
+            var renderable = ToRenderable(source);
+            if (title != null)
+                AnsiConsole.MarkupLine($"[bold underline]{Markup.Escape(title)}[/]");
 
-        AnsiConsole.Write(renderable);
-        AnsiConsole.WriteLine();
+            AnsiConsole.Write(renderable);
+            AnsiConsole.WriteLine();
+        }
+        catch (Exception)
+        {
+            AnsiConsole.WriteLine(source?.ToString() ?? "");
+        }
 
         return source;
     }
@@ -170,6 +177,62 @@ public abstract class Runnable(DemoRunner demo)
         if (type.IsEnum)
             return new Markup($"[{theme.Type}]{obj}[/]");
 
+        // 2D arrays (rectangular)
+        if (obj is Array arr && arr.Rank == 2)
+        {
+            int rows = arr.GetLength(0);
+            int cols = arr.GetLength(1);
+
+            var table = new Table { Border = TableBorder.MinimalHeavyHead, ShowHeaders = false };
+
+            for (int x = 0; x < cols; x++)
+                table.AddColumn("");
+
+            for (int y = 0; y < rows; y++)
+            {
+                var cells = new List<IRenderable>(cols);
+                for (int x = 0; x < cols; x++)
+                    cells.Add(ToRenderable(arr.GetValue(y, x)));
+                table.AddRow(cells);
+            }
+
+            return table;
+        }
+
+        // 2D arrays (jagged)
+        if (obj is Array outer && outer.Rank == 1 && outer.Length > 0 && outer.GetValue(0) is Array)
+        {
+            // Get max column count to make columns consistent
+            var innerArrays = outer.Cast<object?>()
+                .Select(x => x as Array)
+                .Where(x => x is not null)
+                .ToArray();
+
+            int rows = innerArrays.Length;
+            int cols = innerArrays.Max(a => a!.Length);
+
+            var table = new Table { Border = TableBorder.MinimalHeavyHead, ShowHeaders = false };
+
+            for (int x = 0; x < cols; x++)
+                table.AddColumn("");
+
+            for (int y = 0; y < rows; y++)
+            {
+                var row = new List<IRenderable>(cols);
+                var inner = innerArrays[y]!;
+
+                for (int x = 0; x < cols; x++)
+                {
+                    object? val = x < inner.Length ? inner.GetValue(x) : null;
+                    row.Add(ToRenderable(val));
+                }
+
+                table.AddRow(row);
+            }
+
+            return table;
+        }
+
         // IDictionary
         if (obj is IDictionary dict)
         {
@@ -203,10 +266,12 @@ public abstract class Runnable(DemoRunner demo)
             return table;
         }
 
-        // Complex object → show public properties
-        var props = type.GetProperties()
-            .Where(p => p.CanRead)
-            .ToArray();
+        // Complex object → show public properties/fields
+        var members = (
+              type.IsGenericType && typeof(ITuple).IsAssignableFrom(type) && type.GetGenericTypeDefinition().FullName!.StartsWith("System.ValueTuple`", StringComparison.Ordinal)
+                ? (IEnumerable<MemberInfo>)type.GetFields(BindingFlags.Instance | BindingFlags.Public)
+                : type.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(p => p.CanRead)
+            ).ToArray();
 
         var objectTable = new Table()
         {
@@ -214,20 +279,20 @@ public abstract class Runnable(DemoRunner demo)
             Title = new TableTitle($"[{theme.PlainText}]{type.Name}[/]")
         }
             .AddColumns("Property", "Value");
-        foreach (var prop in props)
+        foreach (var m in members)
         {
             try
             {
-                var value = prop.GetValue(obj);
+                var value = m is PropertyInfo pi ? pi.GetValue(obj) : ((FieldInfo)m).GetValue(obj);
                 objectTable.AddRow(
-                    new Markup($"[bold]{prop.Name}[/]"),
+                    new Markup($"[bold]{m.Name}[/]"),
                     ToRenderable(value)
                 );
             }
             catch (Exception ex)
             {
                 objectTable.AddRow(
-                    new Markup($"[bold]{prop.Name}[/]"),
+                    new Markup($"[bold]{m.Name}[/]"),
                     new Markup($"[red]{ex.Message}[/]")
                 );
             }

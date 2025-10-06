@@ -1,7 +1,7 @@
 ﻿using ICSharpCode.Decompiler.CSharp;
 using Spectre.Console;
 
-namespace Tester;
+namespace Tester.Modules;
 
 [Order(1)]
 internal class PrimaryConstructors(DemoRunner demo) : Runnable(demo)
