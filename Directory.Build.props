@@ -1,6 +1,7 @@
 <Project>
 	<PropertyGroup>
-		<Version>0.0.1</Version><!--This will get replaced by Build system -->
+		<!--This will get replaced by Build system -->
+		<Version>0.0.1</Version>
 		<TargetFrameworks>net8.0</TargetFrameworks>
 		<LangVersion>13.0</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -17,19 +18,21 @@
 
 
 		<Authors>Michał Bryłka</Authors>
-		
+
 		<Copyright>Copyright © Michał Bryłka</Copyright>
 		<IsPackable>false</IsPackable>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<PackageProjectUrl>https://github.com/nemesissoft/Nemesis.Demos</PackageProjectUrl>
 		<PackageTags>demo demos liveCode features</PackageTags>
 		<Description>Set of utils for showing coding and language/framework features in form of live demos</Description>
-				
-		
+
+		<!--this will be patched by build system-->
+		<PackageReleaseNotes>RELEASE_NOTES_PLACEHOLDER</PackageReleaseNotes>
+
 		<EnablePackageValidation>true</EnablePackageValidation>
 		<!-- Optional: Detect breaking changes from a previous version -->
 		<!-- <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion> -->
-		
+
 		<PackageReadmeFile>properties\README.md</PackageReadmeFile>
 
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -41,5 +44,5 @@
 		</None>
 		<None Include="..\LICENSE" Pack="true" PackagePath=""/>
 	</ItemGroup>
-	
+
 </Project>

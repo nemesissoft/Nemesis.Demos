@@ -26,16 +26,16 @@ jobs:
   create_nuget:
     runs-on: ubuntu-latest
     steps:   
-    - uses: actions/checkout@v3
+    - name: 🤘 checkout 
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0 # Get all history to allow automatic versioning using MinVer
 
     # Install the .NET SDK indicated in the global.json file
-    - name: Setup .NET
+    - name: 🔎 setup .NET
       uses: actions/setup-dotnet@v5
          
-
-    - name: Release Pack (update release notes)
+    - name: 🗎 update release notes
       if: github.event_name == 'release' 
       env:
         RELEASE_NAME: ${{ github.event.release.name }}
@@ -52,37 +52,47 @@ jobs:
             $releaseNotes = $releaseNotes + "`r`n`r`n"  + $body
         }
             
-        Write-Host "`tSetting release notes to '$releaseNotes'"
+        foreach($propFile in (Get-ChildItem "${{ github.workspace }}" -Recurse -Include "*.csproj", "Directory.Build.props", "Directory.Build.targets")) {
+            Write-Host "Found project file '$propFile'"
+            $propFileDoc = [xml](Get-Content $propFile)
+            $releaseNotesNode = $propFileDoc.SelectSingleNode("Project//PropertyGroup/PackageReleaseNotes[starts-with(., 'RELEASE_NOTES_PLACEHOLDER')]")
 
-        dotnet pack --configuration Release --output ${{ env.NuGetDirectory }} -p:PackageReleaseNotes=$releaseNotes
-
+            if($releaseNotesNode.InnerText -ne $null) 
+            {
+                Write-Host "`tPATCHING '$propFile' with new release notes"
+                $releaseNotesNode.InnerText = "$releaseNotes"
+                $propFileDoc.Save($propFile)
+            }
+        }        
     
-    - name: Non-release Pack 
-      if: github.event_name != 'release'
+    - name: 📦 pack
       run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}
           
-    - uses: actions/upload-artifact@v4
+    - name: ⬆️ upload packages
+      uses: actions/upload-artifact@v4
       with:
         name: nuget
         if-no-files-found: error
         retention-days: 7
         path: ${{ env.NuGetDirectory }}/*.nupkg
   
-  deploy:    
+  deploy:
+    name: 🚀 deploy
     if: github.event_name == 'release' || (github.event_name == 'push' && github.ref_name == 'main')
     runs-on: ubuntu-latest
     needs: [ create_nuget ]
     steps:            
-      - uses: actions/download-artifact@v4
+      - name: ⬇️ download packages
+        uses: actions/download-artifact@v4
         with:
           name: nuget
           path: ${{ env.NuGetDirectory }}
 
       # Install the .NET SDK indicated in the global.json file
-      - name: Setup .NET Core
+      - name: 🔎 setup .NET 
         uses: actions/setup-dotnet@v5
               
-      - name: Publish NuGet package
+      - name: 📦 publish NuGet package
         env:
             EVENT_NAME: ${{ github.event_name }}
         run: |          
