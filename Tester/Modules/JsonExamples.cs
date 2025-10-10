@@ -4,7 +4,6 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Nemesis.Demos.Highlighters;
-using Spectre.Console;
 namespace Tester;
 
 internal partial class JsonExamples(DemoRunner demo) : RunnableAsync(demo, order: 102)

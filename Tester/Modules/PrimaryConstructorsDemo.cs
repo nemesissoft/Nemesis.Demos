@@ -1,5 +1,4 @@
 ﻿using ICSharpCode.Decompiler.CSharp;
-using Spectre.Console;
 
 namespace Tester.Modules;
 

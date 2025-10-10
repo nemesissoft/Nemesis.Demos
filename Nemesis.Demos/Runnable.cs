@@ -78,6 +78,7 @@ public abstract class Runnable(DemoRunner demo, string? group = null, int? order
         try
         {
             AnsiConsole.Markup(demo.HighlighterFactory.GetSyntaxHighlighter(language).GetHighlightedMarkup(source));
+            AnsiConsole.WriteLine();
         }
         catch (Exception) { AnsiConsole.WriteLine(source); }
     }
