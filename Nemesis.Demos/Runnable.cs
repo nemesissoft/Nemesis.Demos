@@ -267,6 +267,26 @@ public abstract class Runnable(DemoRunner demo, string? group = null, int? order
         }
 
         // IEnumerable (but not string)
+        if (obj is IEnumerable e && !e.Cast<object>().Any())
+            return new Text("[]");
+        if (obj.GetType().GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>)) is { } @interface &&
+            @interface.GetGenericArguments()[0] is { } t &&
+            (t == typeof(string) || t == typeof(char) || t == typeof(bool) || typeof(INumber<>).MakeGenericType(t).IsAssignableFrom(t))
+        )
+        {
+            var renderedElements = ((IEnumerable)obj).Cast<object>().Select(o => ToRenderable(o)).ToList();
+
+            List<IRenderable> combined = [new Text("[")];
+            for (int i = 0; i < renderedElements.Count; i++)
+            {
+                combined.Add(renderedElements[i]);
+                if (i < renderedElements.Count - 1)
+                    combined.Add(new Text(","));
+            }
+            combined.Add(new Text("]"));
+
+            return new Columns(combined) { Expand = false };
+        }
         if (obj is IEnumerable enumerable)
         {
             var table = new Table()

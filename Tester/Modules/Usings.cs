@@ -1,6 +1,7 @@
 ﻿using unsafe CharPointer = char*;
 using Matrix = double[,];
 using MatrixJ = double[][];
+using MyList = System.Collections.Generic.List<string>;
 using PointF = (float X, float Y);
 using Speed = float?;
 
@@ -11,6 +12,9 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4)
     public unsafe override void Run()
     {
         PointF p = (1.1f, 2.2f);
+
+        MyList l = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27"];
+
         MatrixJ aj = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
         Matrix a = new[,]
         {
@@ -24,6 +28,7 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4)
         CharPointer pointer = &c;
 
         Dump(p);
+        Dump(l, "List");
         Dump(aj, "Jagged array");
         Dump(a, "2D array");
         Dump(s);
