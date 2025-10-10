@@ -7,11 +7,11 @@ using Nemesis.Demos.Highlighters;
 using Spectre.Console;
 namespace Tester;
 
-[Order(102)]
-internal partial class JsonExamples(DemoRunner demo) : RunnableAsync(demo)
+internal partial class JsonExamples(DemoRunner demo) : RunnableAsync(demo, order: 102)
 {
     public override void Run()
     {
+        Section("JSON");
         Action[] actions = [Required, MissingProperty, ResolverChain, JsonSourceGenerationOptions_NewOptions, DisableReflection_ForAot, PopulateReadOnlyMembers, NewTypesSupport, OptionImmutability, NewsInJsonNode];
 
         foreach (var action in actions)
@@ -23,9 +23,9 @@ internal partial class JsonExamples(DemoRunner demo) : RunnableAsync(demo)
 
     public override async Task RunAsync()
     {
-        DrawLine("Single");
+        Subsection("Single");
         await JsonNodeSingleAsync();
-        DrawLine("Multi");
+        Subsection("Multi");
         await JsonNodeMultiAsync();
     }
 

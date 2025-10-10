@@ -6,8 +6,7 @@ using Speed = float?;
 
 namespace Tester.Modules;
 
-[Order(4)]
-internal class Usings(DemoRunner demo) : Runnable(demo)
+internal class Usings(DemoRunner demo) : Runnable(demo, order: 4)
 {
     public unsafe override void Run()
     {

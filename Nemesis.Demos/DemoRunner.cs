@@ -25,23 +25,17 @@ public partial class DemoRunner
 
     }
 
-#pragma warning disable S2190 // Loops and recursions should not be infinite
     public async Task Run(string[]? args = null)
-#pragma warning restore S2190 // Loops and recursions should not be infinite
     {
         Console.OutputEncoding = Encoding.UTF8;
 
         if (!string.IsNullOrWhiteSpace(_title))
         {
-            var library = Assembly.GetExecutingAssembly().GetName().Name;
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"{library}.Fonts.univers.flf")
-                ?? throw new InvalidOperationException("Embedded Figlet font not found.");
-            var font = FigletFont.Load(stream);
-
             AnsiConsole.Write(
-                new FigletText(font, _title)
+                new FigletText(FigletFontStore.GetFont("univers"), _title)
                 .LeftJustified()
                 .Color(Color.Red)
+                .Centered()
             );
         }
 
@@ -49,15 +43,11 @@ public partial class DemoRunner
             Debugger.Launch();
 
 
-        var demos = _demoTypes
-              .Select(t => (
-                  Instance: CreateRunnable(t, this),
-                  Order: t.GetCustomAttribute<OrderAttribute>()?.Value ?? int.MaxValue
-                  )
-              )
-              .OrderBy(tuple => tuple.Order)
-              .Select(t => t.Instance)
-              .ToList();
+        var demoGroups = _demoTypes
+              .Select(t => CreateRunnable(t, this))
+              .OrderBy(r => r.Order)
+              .GroupBy(r => r.Group)
+              .OrderBy(g => g.Key);
 
         IEnumerable<Runnable> builtInActions = [new ClearAction(this), new ChangeThemeAction(DemoOptions, this), new ChangeLanguageVersionAction(DemoOptions, this), new ExitAction(this)];
 
@@ -67,10 +57,13 @@ public partial class DemoRunner
                 .PageSize(40)
                 .WrapAround(true)
                 .UseConverter(s => s.Description)
-                .AddChoiceGroup(new NoOpAction("Demos", this), demos)
-                .AddChoiceGroup(new NoOpAction("Built in", this), builtInActions)
                 .EnableSearch()
-            ;
+                ;
+
+        foreach (var group in demoGroups)
+            prompt.AddChoiceGroup(new NoOpAction(group.Key, this), group);
+
+        prompt.AddChoiceGroup(new NoOpAction("Built in", this), builtInActions);
 
         while (true)
         {

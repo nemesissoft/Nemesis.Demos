@@ -8,11 +8,13 @@ using Spectre.Console.Rendering;
 
 namespace Nemesis.Demos;
 
-public abstract class Runnable(DemoRunner demo)
+public abstract class Runnable(DemoRunner demo, string? group = null, int? order = null)
 {
-    public abstract void Run();
-
+    public string Group { get; } = group ?? "Demos";
+    public int Order { get; } = order ?? int.MaxValue;
     public virtual string Description => GetType().Name;
+
+    public abstract void Run();
 
     public static IDisposable ForeColor(Color color) => new ConsoleColors.ForeColorStruct(color);
 
@@ -29,6 +31,20 @@ public abstract class Runnable(DemoRunner demo)
         rule.Style = new Style(color ?? Color.White);
         AnsiConsole.Write(rule);
     }
+
+    public static void Section(string title) =>
+            AnsiConsole.Write(new FigletText(
+                FigletFontStore.GetFont("Basic"), title)
+                .Color(Color.Orange1)
+                .Centered()
+    );
+
+    public static void Subsection(string title) =>
+            AnsiConsole.Write(new FigletText(
+                FigletFontStore.GetFont("Ansi_Regular"), title)
+                .Color(Color.DarkGreen)
+                .LeftJustified()
+    );
 
     public static void ExpectFailure<TException>(Action action, string? errorMessagePart = null,
         [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
@@ -301,10 +317,9 @@ public abstract class Runnable(DemoRunner demo)
     }
 }
 
-public abstract class RunnableAsync(DemoRunner demo) : Runnable(demo)
+public abstract class RunnableAsync(DemoRunner demo, string? group = null, int? order = null) : Runnable(demo, group, order)
 {
+    public override void Run() { }
+
     public abstract Task RunAsync();
 }
-
-[AttributeUsage(AttributeTargets.Class)]
-public sealed class OrderAttribute(int value) : Attribute { public int Value => value; }

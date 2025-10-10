@@ -2,8 +2,7 @@
 
 namespace Tester.Modules;
 
-[Order(109)]
-internal class EmptyCollectionsDemo(DemoRunner demo) : Runnable(demo)
+internal class EmptyCollectionsDemo(DemoRunner demo) : Runnable(demo, order: 109, group: "Collections")
 {
     public override void Run()
     {

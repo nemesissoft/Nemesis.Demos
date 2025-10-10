@@ -3,8 +3,7 @@ using Spectre.Console;
 
 namespace Tester.Modules;
 
-[Order(1)]
-internal class PrimaryConstructors(DemoRunner demo) : Runnable(demo)
+internal class PrimaryConstructors(DemoRunner demo) : Runnable(demo, order: 1)
 {
     public override void Run()
     {
