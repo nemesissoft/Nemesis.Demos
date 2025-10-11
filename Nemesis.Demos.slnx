@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/NewFolder1/" />
+  <Folder Name="/Solution items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution items/workflows/">
+    <File Path=".github/workflows/ci.yml" />
+  </Folder>
+  <Project Path="Nemesis.Demos/Nemesis.Demos.csproj" />
+  <Project Path="Tester/Tester.csproj" />
+</Solution>

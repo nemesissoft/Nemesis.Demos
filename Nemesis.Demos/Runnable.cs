@@ -75,36 +75,30 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
     {
         try
         {
-            AnsiConsole.Markup(demo.HighlighterFactory.GetSyntaxHighlighter(language).GetHighlightedMarkup(source));
+            var markup = demo.HighlighterFactory.GetSyntaxHighlighter(language).GetHighlightedMarkup(source);
+            AnsiConsole.Markup(markup);
             AnsiConsole.WriteLine();
         }
-        catch (Exception) { AnsiConsole.WriteLine(source); }
+        catch (Exception) { AnsiConsole.WriteLine(source); AnsiConsole.WriteLine(); }
     }
 
-    public void HighlightDecompiledCSharp(string methodName, params LanguageVersion[] languageVersions)
-    {
-        var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
-        if (languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(methodName, defaultVersion));
-        else
-            foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(methodName, version));
-    }
+    public void HighlightDecompiledCSharp(string methodName, LanguageVersion[]? languageVersions = null, object? instanceOrType = null) =>
+        HighlightDecompiledCSharp(GetMethod(methodName, instanceOrType), languageVersions);
 
-    public void HighlightDecompiledCSharp(MethodInfo method, params LanguageVersion[] languageVersions)
+    public void HighlightDecompiledCSharp(MethodInfo method, LanguageVersion[]? languageVersions = null)
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
-        if (languageVersions.Length == 0)
+        if (languageVersions is null || languageVersions.Length == 0)
             HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(method, defaultVersion));
         else
             foreach (var version in languageVersions)
                 HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(method, version));
     }
 
-    public void HighlightDecompiledCSharp(Type type, params LanguageVersion[] languageVersions)
+    public void HighlightDecompiledCSharp(Type type, LanguageVersion[]? languageVersions = null)
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
-        if (languageVersions.Length == 0)
+        if (languageVersions is null || languageVersions.Length == 0)
             HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(type, defaultVersion));
         else
             foreach (var version in languageVersions)
@@ -112,4 +106,45 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
     }
 
     private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
+
+    public void HighlightDecompiledMsil(string methodName, object? instanceOrType = null) =>
+        HighlightDecompiledMsil(GetMethod(methodName, instanceOrType));
+
+    public void HighlightDecompiledMsil(MethodInfo method)
+    {
+        try
+        {
+            var msil = Decompiler.DecompileAsMsil(method);
+            HighlightCode(msil, Language.Msil);
+        }
+        catch (Exception)
+        {
+            AnsiConsole.WriteLine($"Method '{method.Name}' cannot be disassembled to MSIL");
+        }
+    }
+
+    private static MethodInfo GetMethod(string methodName, object? instanceOrType = null)
+    {
+        Type type = instanceOrType switch
+        {
+            Type t => t,
+            { } obj => obj.GetType(),
+            null => GetTypeFromStackTrace() ?? throw new InvalidOperationException($"Cannot determine declaring type for {methodName}")
+        };
+
+        var methodInfo = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+        return methodInfo ?? throw new ArgumentException($"Method '{methodName}' not found in type '{type.AssemblyQualifiedName}'", nameof(methodName));
+
+        static Type? GetTypeFromStackTrace()
+        {
+            var demosNamespace = typeof(Decompiler).Namespace ?? throw new InvalidOperationException("Demos namespace cannot be determined");
+            var stack = new StackTrace();
+            return stack.GetFrames()?
+                .Select(f => f.GetMethod()?.DeclaringType)
+                .FirstOrDefault(t => t is not null
+                            && t.Namespace is not null
+                            && !t.Namespace.StartsWith(demosNamespace));
+        }
+    }
 }

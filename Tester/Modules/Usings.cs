@@ -36,5 +36,29 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4)
         Dump(s);
 
         Dump($"0x{(long)pointer:X}", "Pointer address");
+
+        HighlightDecompiledCSharp(nameof(Examples));
+
+        HighlightDecompiledMsil(nameof(Examples));
+    }
+
+    public static void Examples()
+    {
+        object oldLock = new();
+        Lock newLock = new();
+
+
+        int i = 0;
+        lock (oldLock)
+        {
+            i++;
+        }
+
+
+
+        lock (newLock)
+        {
+            i++;
+        }
     }
 }

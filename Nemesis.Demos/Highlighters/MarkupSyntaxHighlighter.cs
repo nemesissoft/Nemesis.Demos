@@ -16,10 +16,11 @@ public class MarkupSyntaxHighlighterFactory(DemoOptions Options)
             Language.CSharp => new CSharpHighlighter(Options),
             Language.Xml => new XmlHighlighter(Options),
             Language.Json => new JsonHighlighter(Options),
+            Language.Msil => new MsilHighlighter(Options),
             _ => throw new NotSupportedException($"Language {language} is not supported for syntax highlighting")
         };
     }
 }
 
 
-public enum Language { CSharp, Xml, Json }
+public enum Language { CSharp, Xml, Json, Msil }
