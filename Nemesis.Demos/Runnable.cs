@@ -89,20 +89,20 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
         if (languageVersions is null || languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(method, defaultVersion));
+            HighlightCode(GetComment(defaultVersion) + demo.Decompiler.DecompileAsCSharp(method, defaultVersion));
         else
             foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(method, version));
+                HighlightCode(GetComment(version) + demo.Decompiler.DecompileAsCSharp(method, version));
     }
 
     public void HighlightDecompiledCSharp(Type type, LanguageVersion[]? languageVersions = null)
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
         if (languageVersions is null || languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(type, defaultVersion));
+            HighlightCode(GetComment(defaultVersion) + demo.Decompiler.DecompileAsCSharp(type, defaultVersion));
         else
             foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(type, version));
+                HighlightCode(GetComment(version) + demo.Decompiler.DecompileAsCSharp(type, version));
     }
 
     private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
@@ -114,12 +114,25 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
     {
         try
         {
-            var msil = Decompiler.DecompileAsMsil(method);
+            var msil = demo.Decompiler.DecompileAsMsil(method);
             HighlightCode(msil, Language.Msil);
         }
         catch (Exception)
         {
             AnsiConsole.WriteLine($"Method '{method.Name}' cannot be disassembled to MSIL");
+        }
+    }
+
+    public void HighlightDecompiledMsil(Type type)
+    {
+        try
+        {
+            var msil = demo.Decompiler.DecompileAsMsil(type);
+            HighlightCode(msil, Language.Msil);
+        }
+        catch (Exception)
+        {
+            AnsiConsole.WriteLine($"Type '{type.Name}' cannot be disassembled to MSIL");
         }
     }
 

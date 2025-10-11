@@ -10,15 +10,14 @@ using Spectre.Console;
 
 namespace Nemesis.Demos;
 
-internal static class Decompiler
+public class Decompiler(DemoOptions Options)
 {
-    public static string DecompileAsCSharp(MethodInfo method, LanguageVersion languageVersion)
+    public string DecompileAsCSharp(MethodInfo method, LanguageVersion languageVersion)
     {
         var path = method.DeclaringType!.Assembly.Location;
         var fullTypeName = new FullTypeName(method.DeclaringType!.FullName);
 
-        //ExtensionMethods true  ,LockStatement true, UsePrimaryConstructorSyntaxForNonRecordTypes true, ForEachWithGetEnumeratorExtension true
-        var decompiler = new CSharpDecompiler(path, new DecompilerSettings(languageVersion) { LockStatement = false, });
+        var decompiler = GetCSharpDecompiler(path, languageVersion, Options.DecompilerSettings);
 
         var typeInfo = decompiler.TypeSystem.FindType(fullTypeName).GetDefinition()!;
         var @params = method.GetParameters();
@@ -35,28 +34,64 @@ internal static class Decompiler
         return decompiler.DecompileAsString(methodToken);
     }
 
-    public static string DecompileAsCSharp(Type type, LanguageVersion languageVersion)
+    public string DecompileAsCSharp(Type type, LanguageVersion languageVersion)
     {
         var path = type.Assembly.Location;
         var fullTypeName = new FullTypeName(type.FullName);
 
-        var decompiler = new CSharpDecompiler(path, new DecompilerSettings(languageVersion));
+        var decompiler = GetCSharpDecompiler(path, languageVersion, Options.DecompilerSettings);
 
         return decompiler.DecompileTypeAsString(fullTypeName);
     }
 
-    public static string DecompileAsMsil(MethodInfo method)
+    private static CSharpDecompiler GetCSharpDecompiler(string path, LanguageVersion languageVersion, DemoDecompilerSettings settings)
+        => new(path, new DecompilerSettings(languageVersion)
+        {
+            ExtensionMethods = settings.ExtensionMethods,
+            LockStatement = settings.LockStatement,
+            UsePrimaryConstructorSyntaxForNonRecordTypes = settings.UsePrimaryConstructorSyntaxForNonRecordTypes,
+            ForEachWithGetEnumeratorExtension = settings.ForEachWithGetEnumeratorExtension,
+        });
+
+
+
+
+    public string DecompileAsMsil(MethodInfo method)
     {
         using var file = new PEFile(method.ReflectedType?.Assembly.Location ?? throw new ArgumentException($"Method '{method.Name}' is not contained in proper type", nameof(method)));
         using var sw = new StringWriter();
         var writer = new PlainTextOutput(sw);
 
-        MethodDefinitionHandle methodHandle = (MethodDefinitionHandle)MetadataTokens.Handle(method.MetadataToken);
+        var methodHandle = (MethodDefinitionHandle)MetadataTokens.Handle(method.MetadataToken);
 
-        var disassembler = new ReflectionDisassembler(writer, CancellationToken.None) { ShowSequencePoints = true, ExpandMemberDefinitions = true, };
+        var disassembler = GetMsilDisassembler(writer, Options.DecompilerSettings);
 
         disassembler.DisassembleMethod(file, methodHandle);
 
         return sw.ToString();
     }
+
+    public string DecompileAsMsil(Type type)
+    {
+        using var file = new PEFile(type.Assembly.Location);
+        using var sw = new StringWriter();
+        var writer = new PlainTextOutput(sw);
+
+        var methodHandle = (TypeDefinitionHandle)MetadataTokens.Handle(type.MetadataToken);
+
+        var disassembler = GetMsilDisassembler(writer, Options.DecompilerSettings);
+
+        disassembler.DisassembleType(file, methodHandle);
+
+        return sw.ToString();
+    }
+
+    private static ReflectionDisassembler GetMsilDisassembler(PlainTextOutput writer, DemoDecompilerSettings settings)
+        => new(writer, CancellationToken.None)
+        {
+            ShowSequencePoints = settings.MsilShowSequencePoints,
+            ShowMetadataTokens = settings.MsilShowMetadataTokens,
+            ShowMetadataTokensInBase10 = settings.MsilShowMetadataTokensInBase10,
+            ExpandMemberDefinitions = settings.MsilExpandMemberDefinitions
+        };
 }

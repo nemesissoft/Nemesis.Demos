@@ -5,10 +5,13 @@ using Nemesis.Demos.Highlighters;
 using Spectre.Console;
 
 namespace Nemesis.Demos;
+
 public partial class DemoRunner
 {
     public DemoOptions DemoOptions { get; }
     public MarkupSyntaxHighlighterFactory HighlighterFactory { get; }
+    public Decompiler Decompiler { get; }
+
     private readonly string? _title;
     private readonly IReadOnlyCollection<Type> _demoTypes;
 
@@ -17,6 +20,7 @@ public partial class DemoRunner
         DemoOptions = demosOptions ?? new();
         _title = title;
         HighlighterFactory = new MarkupSyntaxHighlighterFactory(DemoOptions);
+        Decompiler = new(DemoOptions);
 
         _demoTypes =
             Assembly.GetCallingAssembly().GetTypes()
