@@ -6,7 +6,7 @@ using System.Text.Json.Serialization.Metadata;
 using Nemesis.Demos.Highlighters;
 namespace Tester;
 
-internal partial class JsonExamples(DemoRunner demo) : RunnableAsync(demo, order: 102)
+internal partial class JsonExamples(DemoRunner demo) : Runnable(demo, order: 102)
 {
     public override void Run()
     {

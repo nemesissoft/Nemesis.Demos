@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>		
+	<PropertyGroup>
 		<IsPackable>true</IsPackable>
 	</PropertyGroup>
 
@@ -10,30 +10,30 @@
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
 		<DebugType>embedded</DebugType>
-		<DebugSymbols>true</DebugSymbols>		
+		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />		
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
 		<PackageReference Include="ICSharpCode.Decompiler" Version="9.1.0.7988" />
 		<PackageReference Include="Spectre.Console" Version="0.51.1" />
 
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		
+
 		<PackageReference Include="MinVer" Version="4.3.0">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 
 		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.15.0.120848">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		
-		
+
+
 	</ItemGroup>
 
 	<ItemGroup>

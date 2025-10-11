@@ -49,7 +49,7 @@ public partial class DemoRunner
               .GroupBy(r => r.Group)
               .OrderBy(g => g.Key);
 
-        IEnumerable<Runnable> builtInActions = [new ClearAction(this), new ChangeThemeAction(DemoOptions, this), new ChangeLanguageVersionAction(DemoOptions, this), new ExitAction(this)];
+        IEnumerable<Runnable> builtInActions = [new ClearAction(), new ChangeThemeAction(DemoOptions), new ChangeLanguageVersionAction(DemoOptions), new ExitAction()];
 
 
         var prompt =
@@ -61,9 +61,9 @@ public partial class DemoRunner
                 ;
 
         foreach (var group in demoGroups)
-            prompt.AddChoiceGroup(new NoOpAction(group.Key, this), group);
+            prompt.AddChoiceGroup(new NoOpAction(group.Key), group);
 
-        prompt.AddChoiceGroup(new NoOpAction("Built in", this), builtInActions);
+        prompt.AddChoiceGroup(new NoOpAction("Built in"), builtInActions);
 
         while (true)
         {
@@ -72,8 +72,7 @@ public partial class DemoRunner
             try
             {
                 choice.Run();
-                if (choice is RunnableAsync runnableAsync)
-                    await runnableAsync.RunAsync();
+                await choice.RunAsync();
             }
             catch (Exception e)
             {
@@ -100,21 +99,21 @@ public partial class DemoRunner
         };
     }
 
-    private sealed class NoOpAction(string description, DemoRunner demo) : Runnable(demo)
-    {
-        public override void Run() { }
+    private abstract class BuiltInRunnable() : Runnable(null!);
 
+    private sealed class NoOpAction(string description) : BuiltInRunnable
+    {
         public override string Description => description;
     }
 
-    private sealed class ClearAction(DemoRunner demo) : Runnable(demo)
+    private sealed class ClearAction() : BuiltInRunnable
     {
         public override void Run() => AnsiConsole.Clear();
 
         public override string Description => "Clear";
     }
 
-    private sealed class ChangeThemeAction(DemoOptions Options, DemoRunner demo) : Runnable(demo)
+    private sealed class ChangeThemeAction(DemoOptions Options) : BuiltInRunnable
     {
         public override string Description => "Change theme";
 
@@ -282,7 +281,7 @@ public partial class DemoRunner
         }
     }
 
-    private sealed class ChangeLanguageVersionAction(DemoOptions Options, DemoRunner demo) : Runnable(demo)
+    private sealed class ChangeLanguageVersionAction(DemoOptions Options) : BuiltInRunnable
     {
         public override void Run()
         {
@@ -305,7 +304,7 @@ public partial class DemoRunner
         public override string Description => "Change decompiler language version";
     }
 
-    private sealed class ExitAction(DemoRunner demo) : Runnable(demo)
+    private sealed class ExitAction() : BuiltInRunnable
     {
         public override void Run()
         {
