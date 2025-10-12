@@ -1,9 +1,7 @@
 ﻿namespace Tester.Modules;
 
-public sealed class NameofUnboundGeneric(DemoRunner demo) : Runnable(demo, order: 3, group: "C# 14 features")
+public sealed class NameofUnboundGeneric(DemoRunner demo) : Runnable(demo, order: 3, group: "C# 14 features", description: "03. nameof in unbound generics")
 {
-    public override string Description => "03. nameof in unbound generics";
-
     public override void Run()
     {
         Section("nameof in unbound generics");

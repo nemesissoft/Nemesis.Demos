@@ -103,24 +103,18 @@ public partial class DemoRunner
         };
     }
 
-    private abstract class BuiltInRunnable() : Runnable(null!);
+    private abstract class BuiltInRunnable(string description) : Runnable(null!, description: description);
 
-    private sealed class NoOpAction(string description) : BuiltInRunnable
-    {
-        public override string Description => description;
-    }
+    private sealed class NoOpAction(string description) : BuiltInRunnable(description);
 
-    private sealed class ClearAction() : BuiltInRunnable
+
+    private sealed class ClearAction() : BuiltInRunnable(description: "Clear")
     {
         public override void Run() => AnsiConsole.Clear();
-
-        public override string Description => "Clear";
     }
 
-    private sealed class ChangeThemeAction(DemoOptions Options) : BuiltInRunnable
+    private sealed class ChangeThemeAction(DemoOptions Options) : BuiltInRunnable(description: "Change theme")
     {
-        public override string Description => "Change theme";
-
         const string DEMO_CODE = """
             using System;
 
@@ -285,7 +279,7 @@ public partial class DemoRunner
         }
     }
 
-    private sealed class ChangeLanguageVersionAction(DemoOptions Options) : BuiltInRunnable
+    private sealed class ChangeLanguageVersionAction(DemoOptions Options) : BuiltInRunnable(description: "Change decompiler language version")
     {
         public override void Run()
         {
@@ -304,18 +298,14 @@ public partial class DemoRunner
             Options.DefaultDecompilerLanguageVersion = selectedVersion;
             AnsiConsole.MarkupLine($"[yellow]Language version changed to {selectedVersion}![/]");
         }
-
-        public override string Description => "Change decompiler language version";
     }
 
-    private sealed class ExitAction() : BuiltInRunnable
+    private sealed class ExitAction() : BuiltInRunnable(description: "Exit")
     {
         public override void Run()
         {
             if (AnsiConsole.Confirm("[red]Are you sure you want to quit?[/]"))
                 Environment.Exit(0);
         }
-
-        public override string Description => "Exit";
     }
 }

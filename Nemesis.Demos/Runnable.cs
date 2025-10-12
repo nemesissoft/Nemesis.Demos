@@ -5,11 +5,11 @@ using Spectre.Console;
 
 namespace Nemesis.Demos;
 
-public abstract partial class Runnable(DemoRunner demo, string? group = null, int? order = null)
+public abstract partial class Runnable(DemoRunner demo, string? group = null, int? order = null, string? description = null)
 {
     public string Group { get; } = group ?? "Demos";
     public int Order { get; } = order ?? int.MaxValue;
-    public virtual string Description => GetType().Name;
+    public string Description => description ?? GetType().Name;
 
     public virtual void Run() { }
 
