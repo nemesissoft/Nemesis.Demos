@@ -12,12 +12,12 @@ namespace Nemesis.Demos;
 
 public class Decompiler(DemoOptions Options)
 {
-    public string DecompileAsCSharp(MethodInfo method, LanguageVersion languageVersion)
+    public string DecompileAsCSharp(MethodInfo method, LanguageVersion languageVersion, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
     {
         var path = method.DeclaringType!.Assembly.Location;
         var fullTypeName = new FullTypeName(method.DeclaringType!.FullName);
 
-        var decompiler = GetCSharpDecompiler(path, languageVersion, Options.DecompilerSettings);
+        var decompiler = GetCSharpDecompiler(path, languageVersion, Options.DecompilerSettings, decompilerSettingsBuilder);
 
         var typeInfo = decompiler.TypeSystem.FindType(fullTypeName).GetDefinition()!;
         var @params = method.GetParameters();
@@ -34,27 +34,30 @@ public class Decompiler(DemoOptions Options)
         return decompiler.DecompileAsString(methodToken);
     }
 
-    public string DecompileAsCSharp(Type type, LanguageVersion languageVersion)
+    public string DecompileAsCSharp(Type type, LanguageVersion languageVersion, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
     {
         var path = type.Assembly.Location;
         var fullTypeName = new FullTypeName(type.FullName);
 
-        var decompiler = GetCSharpDecompiler(path, languageVersion, Options.DecompilerSettings);
+        var decompiler = GetCSharpDecompiler(path, languageVersion, Options.DecompilerSettings, decompilerSettingsBuilder);
 
         return decompiler.DecompileTypeAsString(fullTypeName);
     }
 
-    private static CSharpDecompiler GetCSharpDecompiler(string path, LanguageVersion languageVersion, DemoDecompilerSettings settings)
-        => new(path, new DecompilerSettings(languageVersion)
+    private static CSharpDecompiler GetCSharpDecompiler(string path, LanguageVersion languageVersion, DemoDecompilerSettings settings, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
+    {
+        var decompilerSettings = new DecompilerSettings(languageVersion)
         {
             ExtensionMethods = settings.ExtensionMethods,
             LockStatement = settings.LockStatement,
             UsePrimaryConstructorSyntaxForNonRecordTypes = settings.UsePrimaryConstructorSyntaxForNonRecordTypes,
             ForEachWithGetEnumeratorExtension = settings.ForEachWithGetEnumeratorExtension,
-        });
+        };
 
+        decompilerSettingsBuilder?.Invoke(decompilerSettings);
 
-
+        return new(path, decompilerSettings);
+    }
 
     public string DecompileAsMsil(MethodInfo method)
     {

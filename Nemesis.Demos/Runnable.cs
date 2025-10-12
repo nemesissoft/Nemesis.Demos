@@ -1,4 +1,5 @@
-﻿using ICSharpCode.Decompiler.CSharp;
+﻿using ICSharpCode.Decompiler;
+using ICSharpCode.Decompiler.CSharp;
 using Nemesis.Demos.Highlighters;
 using Spectre.Console;
 
@@ -82,27 +83,27 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
         catch (Exception) { AnsiConsole.WriteLine(source); AnsiConsole.WriteLine(); }
     }
 
-    public void HighlightDecompiledCSharp(string methodName, LanguageVersion[]? languageVersions = null, object? instanceOrType = null) =>
-        HighlightDecompiledCSharp(GetMethod(methodName, instanceOrType), languageVersions);
+    public void HighlightDecompiledCSharp(string methodName, LanguageVersion[]? languageVersions = null, object? instanceOrType = null, Action<DecompilerSettings>? decompilerSettingsBuilder = null) =>
+        HighlightDecompiledCSharp(GetMethod(methodName, instanceOrType), languageVersions, decompilerSettingsBuilder);
 
-    public void HighlightDecompiledCSharp(MethodInfo method, LanguageVersion[]? languageVersions = null)
+    public void HighlightDecompiledCSharp(MethodInfo method, LanguageVersion[]? languageVersions = null, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
         if (languageVersions is null || languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + demo.Decompiler.DecompileAsCSharp(method, defaultVersion));
+            HighlightCode(GetComment(defaultVersion) + demo.Decompiler.DecompileAsCSharp(method, defaultVersion, decompilerSettingsBuilder));
         else
             foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + demo.Decompiler.DecompileAsCSharp(method, version));
+                HighlightCode(GetComment(version) + demo.Decompiler.DecompileAsCSharp(method, version, decompilerSettingsBuilder));
     }
 
-    public void HighlightDecompiledCSharp(Type type, LanguageVersion[]? languageVersions = null)
+    public void HighlightDecompiledCSharp(Type type, LanguageVersion[]? languageVersions = null, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
         if (languageVersions is null || languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + demo.Decompiler.DecompileAsCSharp(type, defaultVersion));
+            HighlightCode(GetComment(defaultVersion) + demo.Decompiler.DecompileAsCSharp(type, defaultVersion, decompilerSettingsBuilder));
         else
             foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + demo.Decompiler.DecompileAsCSharp(type, version));
+                HighlightCode(GetComment(version) + demo.Decompiler.DecompileAsCSharp(type, version, decompilerSettingsBuilder));
     }
 
     private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
