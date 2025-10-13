@@ -40,6 +40,12 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4)
         HighlightDecompiledCSharp(nameof(Examples));
 
         HighlightDecompiledMsil(nameof(Examples));
+
+        RenderBenchmark("""
+    Method;Job;AnalyzeLaunchVariance;EvaluateOverhead;MaxAbsoluteError;MaxRelativeError;MinInvokeCount;MinIterationTime;OutlierMode;Affinity;EnvironmentVariables;Jit;LargeAddressAware;Platform;PowerPlanMode;Runtime;AllowVeryLargeObjects;Concurrent;CpuGroups;Force;HeapAffinitizeMask;HeapCount;NoAffinitize;RetainVm;Server;Arguments;BuildConfiguration;Clock;EngineFactory;NuGetReferences;Toolchain;IsMutator;InvocationCount;IterationCount;IterationTime;LaunchCount;MaxIterationCount;MaxWarmupIterationCount;MemoryRandomization;MinIterationCount;MinWarmupIterationCount;RunStrategy;UnrollFactor;WarmupCount;Mean;Error;StdDev;Ratio;RatioSD;Gen0;Allocated;Alloc Ratio
+    Traditional;.NET 9.0;False;Default;Default;Default;Default;Default;Default;111111111111;Empty;RyuJit;Default;X64;8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c;.NET 9.0;False;True;False;True;Default;Default;False;False;False;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;16;Default;134.38 ns;2.666 ns;3.174 ns;baseline;;0.0229;144 B;
+    Alternate;.NET 9.0;False;Default;Default;Default;Default;Default;Default;111111111111;Empty;RyuJit;Default;X64;8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c;.NET 9.0;False;True;False;True;Default;Default;False;False;False;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;Default;16;Default;84.24 ns;0.625 ns;0.584 ns;-37%;2.4%;0.0000;0 B;-100%
+    """);
     }
 
     public static void Examples()

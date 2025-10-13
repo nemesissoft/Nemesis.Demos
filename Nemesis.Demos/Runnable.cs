@@ -90,20 +90,20 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
         if (languageVersions is null || languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + demo.Decompiler.DecompileAsCSharp(method, defaultVersion, decompilerSettingsBuilder));
+            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(method, defaultVersion, decompilerSettingsBuilder));
         else
             foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + demo.Decompiler.DecompileAsCSharp(method, version, decompilerSettingsBuilder));
+                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(method, version, decompilerSettingsBuilder));
     }
 
     public void HighlightDecompiledCSharp(Type type, LanguageVersion[]? languageVersions = null, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
         if (languageVersions is null || languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + demo.Decompiler.DecompileAsCSharp(type, defaultVersion, decompilerSettingsBuilder));
+            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(type, defaultVersion, decompilerSettingsBuilder));
         else
             foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + demo.Decompiler.DecompileAsCSharp(type, version, decompilerSettingsBuilder));
+                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(type, version, decompilerSettingsBuilder));
     }
 
     private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
@@ -161,4 +161,14 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
                             && !t.Namespace.StartsWith(demosNamespace));
         }
     }
+
+
+    public static void RenderBenchmark(string csvText, Action<BenchmarkVisualizerOptions>? optionsBuilder = null)
+    {
+        using var reader = new StringReader(csvText);
+        BenchmarkVisualizer.Render(reader, optionsBuilder);
+    }
+
+    public static void RenderBenchmark(TextReader csvReader, Action<BenchmarkVisualizerOptions>? optionsBuilder = null)
+        => BenchmarkVisualizer.Render(csvReader, optionsBuilder);
 }

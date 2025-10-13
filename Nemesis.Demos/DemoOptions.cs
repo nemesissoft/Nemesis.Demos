@@ -13,27 +13,6 @@ public class DemoOptions
 public class DemoDecompilerSettings
 {
     /// <summary>
-    /// Use extension method syntax as opposed to static method call
-    /// </summary>
-    public bool ExtensionMethods { get; set; } = true;
-
-    /// <summary>
-    /// Use lock statement as opposed to Monitor.Enter/Monitor.Exit calls.
-    /// </summary>
-    public bool LockStatement { get; set; } = false;
-
-    /// <summary>
-    /// Use primary constructor syntax with classes and structs.
-    /// </summary>
-    public bool UsePrimaryConstructorSyntaxForNonRecordTypes { get; set; } = true;
-
-    /// <summary>
-    /// Support GetEnumerator extension methods in foreach.
-    /// </summary>
-    public bool ForEachWithGetEnumeratorExtension { get; set; } = true;
-
-
-    /// <summary>
     /// Show sequence points if debug information is loaded in Cecil.
     /// </summary>
     public bool MsilShowSequencePoints { get; set; } = true;
