@@ -49,21 +49,34 @@ public static class BenchmarkVisualizer
             if (parts.Length <= Math.Max(meanIdx, methodIdx))
                 continue;
 
-            string meanText = parts[meanIdx].Trim();
-            double meanValue = ExtractMean(meanText, out string unit);
+            double meanValue = ExtractMean(TrimRecursive(parts[meanIdx]), out string unit);
 
             list.Add(new BenchmarkResult
             {
-                Method = parts[methodIdx].Trim(),
+                Method = TrimRecursive(parts[methodIdx]),
                 Mean = meanValue,
                 OriginalUnit = unit,
-                Ratio = ratioIdx >= 0 ? parts[ratioIdx].Trim() : "",
-                Gen0 = gen0Idx >= 0 ? parts[gen0Idx].Trim() : "",
-                Allocated = allocIdx >= 0 ? parts[allocIdx].Trim() : ""
+                Ratio = ratioIdx >= 0 ? TrimRecursive(parts[ratioIdx]) : "",
+                Gen0 = gen0Idx >= 0 ? TrimRecursive(parts[gen0Idx]) : "",
+                Allocated = allocIdx >= 0 ? TrimRecursive(parts[allocIdx]) : ""
             });
         }
 
         return list.AsReadOnly();
+    }
+
+    private static string TrimRecursive(string input)
+    {
+        if (input is null) return "";
+
+        string trimmed = input.Trim();
+
+        return trimmed switch
+        {
+            ['"', .. var inner, '"'] => TrimRecursive(new string(inner)),
+            ['\'', .. var inner, '\''] => TrimRecursive(new string(inner)),
+            _ => trimmed
+        };
     }
 
     static double ExtractMean(string text, out string unit)
@@ -80,7 +93,7 @@ public static class BenchmarkVisualizer
         if (parts.Length > 1)
             unit = parts[1].Trim();
 
-        double.TryParse(numberPart, NumberStyles.Float, CultureInfo.InvariantCulture, out double value);
+        double.TryParse(numberPart, NumberStyles.Any, CultureInfo.InvariantCulture, out double value);
         return value;
     }
 
@@ -136,7 +149,7 @@ public static class BenchmarkVisualizer
 
             table.AddRow(
                 $"[cyan]{r.Method}[/]",
-                r.Mean.ToString("F2", CultureInfo.InvariantCulture),
+                r.Mean.ToString("N2", CultureInfo.InvariantCulture),
                 $"[{ratioColor}]{r.Ratio}[/]",
                 r.Gen0,
                 r.Allocated
