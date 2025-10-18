@@ -42,9 +42,9 @@ public class Decompiler(DemoOptions Options)
         decompilerSettingsBuilder?.Invoke(decompilerSettings);
 
         CSharpFormattingOptions formattingOptions = FormattingOptionsFactory.CreateAllman();
+        formattingOptions.IndentationString = "    ";
         formattingOptions.IndentSwitchBody = false;
         formattingOptions.ArrayInitializerWrapping = Wrapping.WrapIfTooLong;
-        formattingOptions.AutoPropertyFormatting = PropertyFormatting.SingleLine;
         formattingOptionsBuilder?.Invoke(formattingOptions);
 
 

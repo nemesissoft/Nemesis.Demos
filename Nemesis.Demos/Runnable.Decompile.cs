@@ -4,8 +4,6 @@ using ICSharpCode.Decompiler.CSharp.OutputVisitor;
 using Nemesis.Demos.Highlighters;
 using Spectre.Console;
 
-using static Nemesis.Demos.Utils;
-
 namespace Nemesis.Demos;
 
 public partial class Runnable
@@ -71,13 +69,10 @@ public partial class Runnable
             AnsiConsole.WriteLine($"Type '{type.Name}' cannot be disassembled to MSIL");
         }
     }
-}
 
-file static class Utils
-{
-    internal static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
+    private static string GetComment(LanguageVersion version) => $"//Decompiled using C# version {version}{Environment.NewLine}";
 
-    internal static MethodInfo GetMethodInfo(string methodName, object? instanceOrType = null)
+    private static MethodInfo GetMethodInfo(string methodName, object? instanceOrType)
     {
         Type type = instanceOrType switch
         {
