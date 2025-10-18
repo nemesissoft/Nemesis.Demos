@@ -2,48 +2,34 @@
 using System.Reflection.Metadata.Ecma335;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
+using ICSharpCode.Decompiler.CSharp.OutputVisitor;
+using ICSharpCode.Decompiler.CSharp.Syntax;
 using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler.TypeSystem;
-using Spectre.Console;
 
 namespace Nemesis.Demos;
 
 public class Decompiler(DemoOptions Options)
 {
-    public static string DecompileAsCSharp(MethodInfo method, LanguageVersion languageVersion, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
-    {
-        var path = method.DeclaringType!.Assembly.Location;
-        var fullTypeName = new FullTypeName(method.DeclaringType!.FullName);
+    public static string DecompileAsCSharp(MethodInfo method, LanguageVersion languageVersion, Action<DecompilerSettings>? decompilerSettingsBuilder, Action<CSharpFormattingOptions>? formattingOptionsBuilder) =>
+        Decompile(
+            path: method.DeclaringType!.Assembly.Location,
+            languageVersion,
+            decompiler => decompiler.Decompile(MetadataTokens.EntityHandle(method.MetadataToken)),
+            decompilerSettingsBuilder,
+            formattingOptionsBuilder);
 
-        var decompiler = GetCSharpDecompiler(path, languageVersion, decompilerSettingsBuilder);
+    public static string DecompileAsCSharp(Type type, LanguageVersion languageVersion, Action<DecompilerSettings>? decompilerSettingsBuilder, Action<CSharpFormattingOptions>? formattingOptionsBuilder) =>
+        Decompile(
+            path: type.Assembly.Location,
+            languageVersion,
+            d => d.DecompileType(new FullTypeName(type.FullName)),
+            decompilerSettingsBuilder,
+            formattingOptionsBuilder);
 
-        var typeInfo = decompiler.TypeSystem.FindType(fullTypeName).GetDefinition()!;
-        var @params = method.GetParameters();
-
-        var methodToken = typeInfo.Methods.First(m =>
-            m.Name == method.Name &&
-            m.ReturnType.FullName == method.ReturnType.FullName &&
-            m.Parameters.Count == @params.Length &&
-            m.Parameters.Zip(@params)
-                .Select(t => t.First.Type.FullName == t.Second.ParameterType.FullName)
-                .All(b => b)
-        ).MetadataToken;
-
-        return decompiler.DecompileAsString(methodToken);
-    }
-
-    public static string DecompileAsCSharp(Type type, LanguageVersion languageVersion, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
-    {
-        var path = type.Assembly.Location;
-        var fullTypeName = new FullTypeName(type.FullName);
-
-        var decompiler = GetCSharpDecompiler(path, languageVersion, decompilerSettingsBuilder);
-
-        return decompiler.DecompileTypeAsString(fullTypeName);
-    }
-
-    private static CSharpDecompiler GetCSharpDecompiler(string path, LanguageVersion languageVersion, Action<DecompilerSettings>? decompilerSettingsBuilder = null)
+    private static string Decompile(string path, LanguageVersion languageVersion, Func<CSharpDecompiler, SyntaxTree> decompileFunction,
+        Action<DecompilerSettings>? decompilerSettingsBuilder, Action<CSharpFormattingOptions>? formattingOptionsBuilder)
     {
         var decompilerSettings = new DecompilerSettings(languageVersion)
         {
@@ -55,7 +41,19 @@ public class Decompiler(DemoOptions Options)
 
         decompilerSettingsBuilder?.Invoke(decompilerSettings);
 
-        return new(path, decompilerSettings);
+        CSharpFormattingOptions formattingOptions = FormattingOptionsFactory.CreateAllman();
+        formattingOptions.IndentSwitchBody = false;
+        formattingOptions.ArrayInitializerWrapping = Wrapping.WrapIfTooLong;
+        formattingOptions.AutoPropertyFormatting = PropertyFormatting.SingleLine;
+        formattingOptionsBuilder?.Invoke(formattingOptions);
+
+
+        var decompiler = new CSharpDecompiler(path, decompilerSettings);
+        var syntaxTree = decompileFunction(decompiler);
+
+        using var sw = new StringWriter();
+        syntaxTree.AcceptVisitor(new CSharpOutputVisitor(sw, formattingOptions));
+        return sw.ToString();
     }
 
     public string DecompileAsMsil(MethodInfo method)
@@ -79,11 +77,11 @@ public class Decompiler(DemoOptions Options)
         using var sw = new StringWriter();
         var writer = new PlainTextOutput(sw);
 
-        var methodHandle = (TypeDefinitionHandle)MetadataTokens.Handle(type.MetadataToken);
+        TypeDefinitionHandle typeHandle = (TypeDefinitionHandle)MetadataTokens.Handle(type.MetadataToken);
 
         var disassembler = GetMsilDisassembler(writer, Options.DecompilerSettings);
 
-        disassembler.DisassembleType(file, methodHandle);
+        disassembler.DisassembleType(file, typeHandle);
 
         return sw.ToString();
     }

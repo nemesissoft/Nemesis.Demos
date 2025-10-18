@@ -1,5 +1,4 @@
 <Solution>
-  <Folder Name="/NewFolder1/" />
   <Folder Name="/Solution items/">
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
