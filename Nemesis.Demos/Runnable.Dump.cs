@@ -38,7 +38,7 @@ public partial class Runnable
         if (obj is IValueWrapper valueWrapper)
             return ToRenderable(valueWrapper.Value);
 
-        if (obj is JsonObject json)
+        if (obj is JsonNode json)
             return new Markup(demo.HighlighterFactory.GetSyntaxHighlighter(Language.Json).GetHighlightedMarkup(json.ToString()));
 
         if (obj is XNode xml)
