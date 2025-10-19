@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Tester": {
+      "commandName": "Project",
+      "commandLineArgs": "\"--groups=['Collections', 'Demos']\""
+    }
+  }
+}

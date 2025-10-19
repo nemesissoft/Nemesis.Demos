@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.RegularExpressions;
 using ICSharpCode.Decompiler.CSharp;
 using Microsoft.CodeAnalysis;
 using Nemesis.Demos.Highlighters;
@@ -44,14 +45,17 @@ public partial class DemoRunner
             );
         }
 
-        if (args is not null && args.Length > 0 && args.Any(a => string.Equals(a, "/debug", StringComparison.OrdinalIgnoreCase)) && !Debugger.IsAttached)
+        if (args is not null && args.Length > 0 && args.Any(a => string.Equals(a, "--debug", StringComparison.OrdinalIgnoreCase)) && !Debugger.IsAttached)
             Debugger.Launch();
+
+        IReadOnlyCollection<string> groupsParam = ParseListArgument(args, "--groups");
 
 
         var demoGroups = _demoTypes
               .Select(t => CreateRunnable(t, this))
               .OrderBy(r => r.Order)
               .GroupBy(r => r.Group)
+              .Where(g => groupsParam.Count == 0 || groupsParam.Contains(g.Key))
               .OrderBy(g => g.Key);
 
         IEnumerable<Runnable> builtInActions = [new ClearAction(), new ChangeThemeAction(DemoOptions), new ChangeLanguageVersionAction(DemoOptions), new ExitAction()];
@@ -83,6 +87,27 @@ public partial class DemoRunner
             {
                 AnsiConsole.WriteException(e, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
             }
+        }
+
+        static IReadOnlyCollection<string> ParseListArgument(string[]? args, string name)
+        {
+            if (args is null || args.Length == 0)
+                return [];
+
+            foreach (var arg in args)
+            {
+                if (arg.StartsWith(name + "="))
+                {
+                    string value = arg[(name.Length + 1)..].Trim();
+
+                    if (value.StartsWith('[') && value.EndsWith(']'))
+                        value = value[1..^1];
+
+                    var matches = StripQuotes.Matches(value);
+                    return [.. matches.Select(m => m.Groups[1].Value.Trim())];
+                }
+            }
+            return [];
         }
     }
 
@@ -309,4 +334,7 @@ public partial class DemoRunner
                 Environment.Exit(0);
         }
     }
+
+    [GeneratedRegex(@"'([^']*)'")]
+    private static partial Regex StripQuotes { get; }
 }
