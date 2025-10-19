@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Xml.Linq;
 using unsafe CharPointer = char*;
 using Matrix = double[,];
 using MatrixJ = double[][];
@@ -12,70 +12,11 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4, group: "Featur
 {
     public unsafe override void Run()
     {
-        Dump(JsonNode.Parse("""
-                        {
-              "type": [
-                "object",
-                "null"
-              ],
-              "properties": {
-                "Name": {
-                  "type": "string"
-                },
-                "Age": {
-                  "type": "integer"
-                },
-                "Address": {
-                  "type": [
-                    "object",
-                    "null"
-                  ],
-                  "properties": {
-                    "Street": {
-                      "type": "string"
-                    },
-                    "City": {
-                      "type": "string"
-                    },
-                    "ZipCode": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "Street",
-                    "City",
-                    "ZipCode"
-                  ],
-                  "default": null
-                },
-                "EmployedAt": {
-                  "type": [
-                    "object",
-                    "null"
-                  ],
-                  "properties": {
-                    "Name": {
-                      "type": "string"
-                    },
-                    "Employees": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#"
-                      }
-                    }
-                  },
-                  "required": [
-                    "Name",
-                    "Employees"
-                  ],
-                  "default": null
-                }
-              },
-              "required": [
-                "Name",
-                "Age"
-              ]
-            }
+        Dump(XElement.Parse("""            
+            <ItemGroup>
+              <!-- To enable RespectNullableAnnotations by default in .NET 9 and later, add the following to your project file: -->
+              <RuntimeHostConfigurationOption Include="System.Text.Json.Serialization.RespectNullableAnnotationsDefault" Value="true" />
+            </ItemGroup>
             """));
 
 
