@@ -35,6 +35,9 @@ public partial class Runnable
         if (obj is null)
             return new Markup("[grey italic]null[/]");
 
+        if (obj is IValueWrapper valueWrapper)
+            return ToRenderable(valueWrapper.Value);
+
         if (obj is JsonObject json)
             return new Markup(demo.HighlighterFactory.GetSyntaxHighlighter(Language.Json).GetHighlightedMarkup(json.ToString()));
 
@@ -242,4 +245,9 @@ public partial class Runnable
         }
         return objectTable;
     }
+}
+
+public interface IValueWrapper
+{
+    object Value { get; }
 }

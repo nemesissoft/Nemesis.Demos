@@ -33,6 +33,7 @@ public class Decompiler(DemoOptions Options)
     {
         var decompilerSettings = new DecompilerSettings(languageVersion)
         {
+            AlwaysUseBraces = false,
             ExtensionMethods = true,
             LockStatement = false,
             UsePrimaryConstructorSyntaxForNonRecordTypes = true,

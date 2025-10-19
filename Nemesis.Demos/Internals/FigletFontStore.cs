@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Spectre.Console;
 
-namespace Nemesis.Demos;
+namespace Nemesis.Demos.Internals;
 
 internal static class FigletFontStore
 {

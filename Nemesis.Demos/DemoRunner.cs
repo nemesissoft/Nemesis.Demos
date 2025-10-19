@@ -2,6 +2,7 @@
 using ICSharpCode.Decompiler.CSharp;
 using Microsoft.CodeAnalysis;
 using Nemesis.Demos.Highlighters;
+using Nemesis.Demos.Internals;
 using Spectre.Console;
 
 namespace Nemesis.Demos;

@@ -1,4 +1,5 @@
 ﻿using Nemesis.Demos.Highlighters;
+using Nemesis.Demos.Internals;
 using Spectre.Console;
 
 namespace Nemesis.Demos;

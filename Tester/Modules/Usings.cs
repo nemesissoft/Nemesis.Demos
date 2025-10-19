@@ -29,6 +29,12 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4)
         char c = 'A';
         CharPointer pointer = &c;
 
+        Dump(new Matrix<int>([
+            [1,2, 3],
+            [4,5, 6],
+            [7,8, 9]
+            ]));
+
         Dump(p);
         Dump(l, "List");
         Dump(aj, "Jagged array");
@@ -67,6 +73,65 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4)
         lock (newLock)
         {
             i++;
+        }
+    }
+
+    public unsafe class Matrix<TNumber> : IValueWrapper
+       where TNumber : unmanaged, INumberBase<TNumber>
+    {
+        private readonly TNumber[,] _data;
+        public int Rows { get; }
+        public int Columns { get; }
+        public int Size { get; }
+
+        public object Value => _data;
+
+        public TNumber this[int iRow, int iCol] => _data[iRow, iCol];
+
+        public Matrix(TNumber[,] data)
+        {
+            _data = data;
+            Rows = data.GetLength(0);
+            Columns = data.GetLength(1);
+            Size = Rows * Columns;
+        }
+
+        public Matrix(TNumber[] data, int columns)
+        {
+            var data2d = new TNumber[data.Length / columns, columns];
+
+            //Buffer.BlockCopy(data, 0, data2d, 0, data.Length * Unsafe.SizeOf<TNumber>());
+            fixed (TNumber* pSource = data, pTarget = data2d)
+            {
+                for (int i = 0; i < data.Length; i++)
+                    pTarget[i] = pSource[i];
+            }
+            _data = data2d;
+            Rows = data2d.GetLength(0);
+            Columns = data2d.GetLength(1);
+        }
+
+        public Matrix(TNumber[][] data)
+        {
+            ArgumentNullException.ThrowIfNull(data);
+            if (data.Length == 0) throw new ArgumentException("Jagged array must not be empty.", nameof(data));
+
+            int rows = data.Length;
+            int cols = data[0].Length;
+
+
+            for (int i = 1; i < rows; i++)
+                if (data[i].Length != cols)
+                    throw new ArgumentException("All rows in the jagged array must have the same length.", nameof(data));
+
+            _data = new TNumber[rows, cols];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < cols; j++)
+                    _data[i, j] = data[i][j];
+
+            Rows = rows;
+            Columns = cols;
+            Size = rows * cols;
         }
     }
 }
