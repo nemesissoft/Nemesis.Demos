@@ -1,4 +1,5 @@
-﻿using unsafe CharPointer = char*;
+﻿using System.Text.Json.Nodes;
+using unsafe CharPointer = char*;
 using Matrix = double[,];
 using MatrixJ = double[][];
 using MyList = System.Collections.Generic.List<string>;
@@ -11,6 +12,73 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4)
 {
     public unsafe override void Run()
     {
+        Dump(JsonNode.Parse("""
+                        {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "Name": {
+                  "type": "string"
+                },
+                "Age": {
+                  "type": "integer"
+                },
+                "Address": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "Street": {
+                      "type": "string"
+                    },
+                    "City": {
+                      "type": "string"
+                    },
+                    "ZipCode": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "Street",
+                    "City",
+                    "ZipCode"
+                  ],
+                  "default": null
+                },
+                "EmployedAt": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "Name": {
+                      "type": "string"
+                    },
+                    "Employees": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#"
+                      }
+                    }
+                  },
+                  "required": [
+                    "Name",
+                    "Employees"
+                  ],
+                  "default": null
+                }
+              },
+              "required": [
+                "Name",
+                "Age"
+              ]
+            }
+            """));
+
+
         Dump(new FileInfo("c:/temp/i.txt"));
 
         PointF p = (1.1f, 2.2f);

@@ -20,12 +20,12 @@ internal sealed class JsonHighlighter(DemoOptions Options) : MarkupSyntaxHighlig
         switch (element.ValueKind)
         {
             case JsonValueKind.Object:
-                sb.AppendLine($"{indentStr}[{theme.PlainText}]{{[/]");
+                sb.AppendLine($"[{theme.PlainText}]{{[/]");
                 foreach (var prop in element.EnumerateObject())
                 {
                     sb.Append(indentStr + "  ");
                     sb.Append($"[{theme.Type}]\"{Escape(prop.Name)}\"[/]");
-                    sb.Append($" [{theme.PlainText}]:[/] ");
+                    sb.Append($"[{theme.PlainText}]:[/] ");
                     AppendValue(sb, prop.Value, theme, indent + 1);
                     sb.AppendLine();
                 }
@@ -34,14 +34,14 @@ internal sealed class JsonHighlighter(DemoOptions Options) : MarkupSyntaxHighlig
                 break;
 
             case JsonValueKind.Array:
-                sb.AppendLine($"{indentStr}[{theme.PlainText}]\\[[/]");
+                sb.AppendLine($"[{theme.PlainText}][[[/]");
                 foreach (var item in element.EnumerateArray())
                 {
+                    sb.Append(indentStr + "  ");
                     AppendValue(sb, item, theme, indent + 1);
                     sb.AppendLine();
                 }
-                sb.Append(indentStr);
-                sb.Append($"[{theme.PlainText}]\\][/]");
+                sb.Append($"{indentStr}[{theme.PlainText}]]][/]");
                 break;
 
             case JsonValueKind.String:
