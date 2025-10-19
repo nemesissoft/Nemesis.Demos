@@ -44,6 +44,9 @@ public partial class Runnable
         if (obj is XNode xml)
             return new Markup(demo.HighlighterFactory.GetSyntaxHighlighter(Language.Xml).GetHighlightedMarkup(xml.ToString()));
 
+        if (obj is Exception ex)
+            AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
+
         static Markup GetFormattableMarkup(IFormattable formattable, string? format, string? style = null) =>
             new(
                 (style is null ? "" : $"[{style}]") +
