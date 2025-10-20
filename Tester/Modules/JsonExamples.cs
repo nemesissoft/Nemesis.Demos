@@ -41,7 +41,7 @@ internal partial class JsonExamples(DemoRunner demo) : Runnable(demo, order: 102
 
         ExpectFailure<JsonException>(
             () => JsonSerializer.Deserialize("""{"Name" : "Mike" }""", MyContext.Default.Person),
-            "was missing required properties, including the following: Age"
+            "missing required properties including.*Age"
         );
     }
 

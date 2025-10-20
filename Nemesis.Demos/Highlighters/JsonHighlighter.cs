@@ -1,11 +1,12 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Spectre.Console;
 
 namespace Nemesis.Demos.Highlighters;
 
-internal sealed class JsonHighlighter(DemoOptions Options) : MarkupSyntaxHighlighter
+internal sealed class JsonHighlighter(DemoOptions Options) : IMarkupSyntaxHighlighter
 {
-    public override string GetHighlightedMarkup(string code)
+    public string GetHighlightedMarkup(string code)
     {
         using var doc = JsonDocument.Parse(code);
         var sb = new StringBuilder();
@@ -24,7 +25,7 @@ internal sealed class JsonHighlighter(DemoOptions Options) : MarkupSyntaxHighlig
                 foreach (var prop in element.EnumerateObject())
                 {
                     sb.Append(indentStr + "  ");
-                    sb.Append($"[{theme.Type}]\"{Escape(prop.Name)}\"[/]");
+                    sb.Append($"[{theme.Type}]\"{Markup.Escape(prop.Name)}\"[/]");
                     sb.Append($"[{theme.PlainText}]:[/] ");
                     AppendValue(sb, prop.Value, theme, indent + 1);
                     sb.AppendLine();
@@ -45,7 +46,7 @@ internal sealed class JsonHighlighter(DemoOptions Options) : MarkupSyntaxHighlig
                 break;
 
             case JsonValueKind.String:
-                sb.Append($"[{theme.String}]\"{Escape(element.GetString()!)}\"[/]");
+                sb.Append($"[{theme.String}]\"{Markup.Escape(element.GetString()!)}\"[/]");
                 break;
 
             case JsonValueKind.Number:

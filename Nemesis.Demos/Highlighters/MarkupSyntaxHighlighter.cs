@@ -1,15 +1,13 @@
 ﻿namespace Nemesis.Demos.Highlighters;
 
-public abstract class MarkupSyntaxHighlighter
+public interface IMarkupSyntaxHighlighter
 {
-    public abstract string GetHighlightedMarkup(string code);
-
-    protected static string Escape(string text) => text.Replace("[", "[[").Replace("]", "]]");
+    string GetHighlightedMarkup(string code);
 }
 
 public class MarkupSyntaxHighlighterFactory(DemoOptions Options)
 {
-    public MarkupSyntaxHighlighter GetSyntaxHighlighter(Language language)
+    public IMarkupSyntaxHighlighter GetSyntaxHighlighter(Language language)
     {
         return language switch
         {

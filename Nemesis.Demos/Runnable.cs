@@ -1,4 +1,5 @@
-﻿using Nemesis.Demos.Highlighters;
+﻿using System.Text.RegularExpressions;
+using Nemesis.Demos.Highlighters;
 using Nemesis.Demos.Internals;
 using Spectre.Console;
 
@@ -44,31 +45,51 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
                 .LeftJustified()
     );
 
-    public static void ExpectFailure<TException>(Action action, string? errorMessagePart = null,
-        [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
+
+    public static void ExpectFailure<TException>(Action action, string? errorMessagePartOrPattern = null, [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
+        => ExpectFailureAsync<TException>(() => { action(); return Task.CompletedTask; }, errorMessagePartOrPattern, actionText).GetAwaiter().GetResult();
+
+    public static async Task ExpectFailureAsync<TException>(Func<Task> action, string? errorMessagePartOrPattern = null, [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
     {
+        actionText ??= "<no action>";
+
         try
         {
-            action();
-            AnsiConsole.MarkupLineInterpolated($"[bold maroon]Expected exception '{typeof(TException)}' not captured[/]");
+            await action();
+            AnsiConsole.MarkupLineInterpolated(
+                $"[bold maroon]❌ Expected exception '{Markup.Escape(typeof(TException).Name)}' was not thrown in:[/] [grey]{Markup.Escape(actionText)}[/]");
         }
-        //p⇒q ⟺ ¬(p ∧ ¬q)
-        catch (TException e) when (!string.IsNullOrEmpty(errorMessagePart) && e.ToString().Contains(errorMessagePart, StringComparison.OrdinalIgnoreCase))
+        catch (TException ex)
         {
-            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
-                .Select(s => $"    {s}");
-            AnsiConsole.MarkupLineInterpolated($"[bold fuchsia]EXPECTED with message for {actionText}:{Environment.NewLine}{string.Join(Environment.NewLine, lines)}[/]");
+            bool matches = string.IsNullOrWhiteSpace(errorMessagePartOrPattern) ||
+                ex.Message.Contains(errorMessagePartOrPattern, StringComparison.OrdinalIgnoreCase) ||
+                Regex.IsMatch(ex.Message, errorMessagePartOrPattern, RegexOptions.IgnoreCase);
+
+            var lines = ex.Message
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => $"    [grey]{Markup.Escape(s)}[/]");
+
+            if (matches)
+            {
+                AnsiConsole.MarkupLineInterpolated($"\n[bold green]✅ Expected {Markup.Escape(typeof(TException).Name)} caught:[/]");
+                AnsiConsole.MarkupLineInterpolated($"[yellow]{Markup.Escape(actionText ?? "")}[/]");
+                AnsiConsole.MarkupLine(string.Join(Environment.NewLine, lines));
+            }
+            else
+            {
+                AnsiConsole.MarkupLineInterpolated($"\n[bold yellow]⚠️ {Markup.Escape(typeof(TException).Name)} caught, but message did not match expected part:[/]");
+                AnsiConsole.MarkupLineInterpolated($"[grey]{Markup.Escape(errorMessagePartOrPattern ?? "(none)")}[/]");
+                AnsiConsole.MarkupLine(string.Join(Environment.NewLine, lines));
+            }
         }
-        catch (TException e)
+        catch (Exception ex)
         {
-            var lines = e.Message.Split([Environment.NewLine, "\n", "\r"], StringSplitOptions.None)
-                .Select(s => $"    {s}");
-            AnsiConsole.MarkupLineInterpolated($"[bold green]EXPECTED for {actionText}:{Environment.NewLine}{string.Join(Environment.NewLine, lines)}[/]");
+            AnsiConsole.MarkupLineInterpolated($"\n[bold red]💥 Unexpected exception in '{Markup.Escape(actionText)}':[/]");
+            AnsiConsole.MarkupLineInterpolated($"[bold red]{Markup.Escape(ex.GetType().FullName ?? "")}[/]");
+            AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
         }
-        catch (Exception e)
-        {
-            AnsiConsole.MarkupLineInterpolated($"[bold red]Failed to capture error for '{actionText}' containing '{errorMessagePart}' instead error was {e.GetType().FullName}: {e}[/]");
-        }
+
+
     }
 
     public void HighlightCode(string source, Language language = Language.CSharp)

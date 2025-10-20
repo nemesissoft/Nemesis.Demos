@@ -2,9 +2,9 @@
 
 namespace Nemesis.Demos.Highlighters;
 
-internal partial class MsilHighlighter(DemoOptions Options) : MarkupSyntaxHighlighter
+internal partial class MsilHighlighter(DemoOptions Options) : IMarkupSyntaxHighlighter
 {
-    public override string GetHighlightedMarkup(string code)
+    public string GetHighlightedMarkup(string code)
     {
         if (string.IsNullOrEmpty(code))
             return string.Empty;
@@ -24,7 +24,7 @@ internal partial class MsilHighlighter(DemoOptions Options) : MarkupSyntaxHighli
             string processed = line;
 
             // Escape brackets for Spectre.Console markup
-            processed = Escape(processed);
+            processed = Spectre.Console.Markup.Escape(processed);
 
             // Separate comment part (// ...) from code
             string commentPart = "";

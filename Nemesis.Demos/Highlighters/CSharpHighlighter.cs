@@ -1,13 +1,14 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Text;
+using Spectre.Console;
 
 namespace Nemesis.Demos.Highlighters;
 
-internal sealed class CSharpHighlighter(DemoOptions Options) : MarkupSyntaxHighlighter
+internal sealed class CSharpHighlighter(DemoOptions Options) : IMarkupSyntaxHighlighter
 {
-    public override string GetHighlightedMarkup(string code) => GetHighlightedMarkup(GetParsedCodeRoot(code));
+    public string GetHighlightedMarkup(string code) => GetHighlightedMarkup(GetParsedCodeRoot(code));
 
     internal static SyntaxNode GetParsedCodeRoot(string code) => CSharpSyntaxTree.ParseText(code).GetRoot();
 
@@ -46,7 +47,7 @@ internal sealed class CSharpHighlighter(DemoOptions Options) : MarkupSyntaxHighl
                 break;
             case SyntaxKind.SingleLineCommentTrivia:
             case SyntaxKind.MultiLineCommentTrivia:
-                sb.Append($"[{theme.Comment}]{Escape(trivia.ToFullString())}[/]");
+                sb.Append($"[{theme.Comment}]{Markup.Escape(trivia.ToFullString())}[/]");
                 break;
             default:
                 sb.Append(trivia.ToFullString());
@@ -66,6 +67,6 @@ internal sealed class CSharpHighlighter(DemoOptions Options) : MarkupSyntaxHighl
 
         return theme.PlainText;
     }
-    
-    private static string EscapeSpectreMarkup(string text, string color) => $"[{color}]{Escape(text)}[/]";
+
+    private static string EscapeSpectreMarkup(string text, string color) => $"[{color}]{Markup.Escape(text)}[/]";
 }
