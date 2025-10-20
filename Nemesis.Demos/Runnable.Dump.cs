@@ -24,7 +24,7 @@ public partial class Runnable
             }
             catch (Exception ex)
             {
-                AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
+                Dump(ex, "XML exception");
             }
         return new XElement("Empty");
     }
@@ -41,7 +41,7 @@ public partial class Runnable
             }
             catch (JsonException ex)
             {
-                AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
+                Dump(ex, "JSON exception");
             }
         return new JsonObject();
     }
@@ -103,7 +103,7 @@ public partial class Runnable
             return new Markup(demo.HighlighterFactory.GetSyntaxHighlighter(Language.Xml).GetHighlightedMarkup(xml.ToString()));
 
         if (obj is Exception exception)
-            AnsiConsole.WriteException(exception, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
+            return ExceptionExtensions.GetRenderable(exception, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
 
         static Markup GetFormattableMarkup(IFormattable formattable, string? format, string? style = null) =>
             new(
