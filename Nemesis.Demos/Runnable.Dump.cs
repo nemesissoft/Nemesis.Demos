@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Nemesis.Demos.Highlighters;
 using Spectre.Console;
@@ -11,6 +12,21 @@ namespace Nemesis.Demos;
 
 public partial class Runnable
 {
+    public Regex DumpRegex([StringSyntax(StringSyntaxAttribute.Regex)] string source, string? title = null)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            AnsiConsole.MarkupLine("[red]Regex pattern is empty.[/]");
+        else
+            try
+            {
+                return Dump(new Regex(source), title);
+            }
+            catch (Exception ex)
+            {
+                Dump(ex, "Regex exception");
+            }
+        return new Regex("");
+    }
 
     public XElement DumpXml([StringSyntax(StringSyntaxAttribute.Xml)] string source, string? title = null)
     {
@@ -92,6 +108,19 @@ public partial class Runnable
 
         if (obj is IValueWrapper valueWrapper)
             return ToRenderable(valueWrapper.Value);
+
+        if (obj is Regex regex)
+        {
+            var table = new Table().Border(TableBorder.Rounded).BorderColor(Color.Grey37)
+                .AddColumns("[bold yellow]Property[/]", "[bold cyan]Value[/]");
+
+            table.AddRow("Pattern", $"[green]{Markup.Escape(regex.ToString())}[/]");
+            table.AddRow("Options", $"[blue]{Markup.Escape(regex.Options.ToString())}[/]");
+            table.AddRow("RightToLeft", $"[magenta]{regex.RightToLeft}[/]");
+            table.AddRow("MatchTimeout", $"[red]{regex.MatchTimeout}[/]");
+
+            return table;
+        }
 
         if (obj is Uri uri)
             return new Text(uri.ToString(), new Style(link: uri.ToString()));

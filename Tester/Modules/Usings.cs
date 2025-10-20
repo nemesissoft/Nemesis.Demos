@@ -12,6 +12,8 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4, group: "Featur
 {
     public unsafe override void Run()
     {
+        DumpRegex("^(\\d{4})-(\\d{2})-(\\d{2})$", "Date");
+
         Dump(XElement.Parse("""            
             <ItemGroup>
               <!-- To enable RespectNullableAnnotations by default in .NET 9 and later, add the following to your project file: -->
