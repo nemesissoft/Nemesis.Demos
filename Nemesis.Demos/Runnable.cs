@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using Nemesis.Demos.Highlighters;
 using Nemesis.Demos.Internals;
 using Spectre.Console;
@@ -92,7 +93,13 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
 
     }
 
-    public void HighlightCode(string source, Language language = Language.CSharp)
+
+    public void HighlightCsharp([StringSyntax("C#")] string source) => HighlightCode(source, Language.CSharp);
+    public void HighlightMsil([StringSyntax("MSIL")] string source) => HighlightCode(source, Language.Msil);
+    public void HighlightXml([StringSyntax(StringSyntaxAttribute.Xml)] string source) => HighlightCode(source, Language.Xml);
+    public void HighlightJson([StringSyntax(StringSyntaxAttribute.Json)] string source) => HighlightCode(source, Language.Json);
+
+    private void HighlightCode(string source, Language language)
     {
         try
         {
@@ -102,7 +109,6 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
         }
         catch (Exception) { AnsiConsole.WriteLine(source); AnsiConsole.WriteLine(); }
     }
-
 
 
     public static void RenderBenchmark(string csvText, Action<BenchmarkVisualizerOptions>? optionsBuilder = null)

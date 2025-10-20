@@ -1,4 +1,6 @@
 ﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Nemesis.Demos.Highlighters;
@@ -9,6 +11,59 @@ namespace Nemesis.Demos;
 
 public partial class Runnable
 {
+
+    public XElement DumpXml([StringSyntax(StringSyntaxAttribute.Xml)] string source, string? title = null)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            AnsiConsole.MarkupLine("[red]XML content is empty.[/]");
+        else
+            try
+            {
+                var xml = XElement.Parse(source);
+                return Dump(xml, title);
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
+            }
+        return new XElement("Empty");
+    }
+
+    public JsonNode DumpJson([StringSyntax(StringSyntaxAttribute.Json)] string source, string? title = null)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            AnsiConsole.MarkupLine("[red]JSON content is empty.[/]");
+        else
+            try
+            {
+                var json = JsonNode.Parse(source);
+                return Dump(json!, title);
+            }
+            catch (JsonException ex)
+            {
+                AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
+            }
+        return new JsonObject();
+    }
+
+    public Uri DumpUri([StringSyntax(StringSyntaxAttribute.Uri)] string source, string? title = null)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            AnsiConsole.MarkupLine("[red]URI is empty.[/]");
+            return new Uri("", UriKind.Relative);
+        }
+        else if (Uri.TryCreate(source, UriKind.RelativeOrAbsolute, out var uri))
+        {
+            return Dump(uri, title);
+        }
+        else
+        {
+            AnsiConsole.MarkupLineInterpolated($"[red]URI {Markup.Escape(source)} is not well-formed.[/]");
+            return new Uri("", UriKind.Relative);
+        }
+    }
+
     public T Dump<T>(T source, string? title = null)
     {
         try
@@ -37,6 +92,9 @@ public partial class Runnable
 
         if (obj is IValueWrapper valueWrapper)
             return ToRenderable(valueWrapper.Value);
+
+        if (obj is Uri uri)
+            return new Text(uri.ToString(), new Style(link: uri.ToString()));
 
         if (obj is JsonNode json)
             return new Markup(demo.HighlighterFactory.GetSyntaxHighlighter(Language.Json).GetHighlightedMarkup(json.ToString()));

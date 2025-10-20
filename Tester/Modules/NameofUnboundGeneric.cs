@@ -6,7 +6,7 @@ public sealed class NameofUnboundGeneric(DemoRunner demo) : Runnable(demo, order
     {
         Section("nameof in unbound generics");
 
-        HighlightCode("""
+        HighlightCsharp("""
             // C# 14 allows nameof with unbound generic types.
             string name = nameof(List<>); // "List"
 

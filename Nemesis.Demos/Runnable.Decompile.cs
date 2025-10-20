@@ -20,10 +20,10 @@ public partial class Runnable
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
         if (languageVersions is null || languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(method, defaultVersion, decompilerSettingsBuilder, formattingOptionsBuilder));
+            HighlightCsharp(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(method, defaultVersion, decompilerSettingsBuilder, formattingOptionsBuilder));
         else
             foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(method, version, decompilerSettingsBuilder, formattingOptionsBuilder));
+                HighlightCsharp(GetComment(version) + Decompiler.DecompileAsCSharp(method, version, decompilerSettingsBuilder, formattingOptionsBuilder));
     }
 
 
@@ -33,10 +33,10 @@ public partial class Runnable
     {
         var defaultVersion = demo.DemoOptions.DefaultDecompilerLanguageVersion;
         if (languageVersions is null || languageVersions.Length == 0)
-            HighlightCode(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(type, defaultVersion, decompilerSettingsBuilder, formattingOptionsBuilder));
+            HighlightCsharp(GetComment(defaultVersion) + Decompiler.DecompileAsCSharp(type, defaultVersion, decompilerSettingsBuilder, formattingOptionsBuilder));
         else
             foreach (var version in languageVersions)
-                HighlightCode(GetComment(version) + Decompiler.DecompileAsCSharp(type, version, decompilerSettingsBuilder, formattingOptionsBuilder));
+                HighlightCsharp(GetComment(version) + Decompiler.DecompileAsCSharp(type, version, decompilerSettingsBuilder, formattingOptionsBuilder));
     }
 
 
