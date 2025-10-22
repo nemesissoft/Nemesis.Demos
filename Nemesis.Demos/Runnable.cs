@@ -103,11 +103,11 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
     {
         try
         {
-            var markup = demo.HighlighterFactory.GetSyntaxHighlighter(language).GetHighlightedMarkup(source);
-            AnsiConsole.Markup(markup);
-            AnsiConsole.WriteLine();
+            AnsiConsole.Markup(demo.HighlighterFactory.GetSyntaxHighlighter(language).GetHighlightedMarkup(source));
         }
-        catch (Exception) { AnsiConsole.WriteLine(source); AnsiConsole.WriteLine(); }
+        catch (Exception) { AnsiConsole.WriteLine(source); }
+
+        AnsiConsole.WriteLine();
     }
 
 

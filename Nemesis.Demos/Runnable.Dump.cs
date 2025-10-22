@@ -62,7 +62,7 @@ public partial class Runnable
         return new JsonObject();
     }
 
-    public Uri DumpUri([StringSyntax(StringSyntaxAttribute.Uri)] string source, string? title = null)
+    public Uri DumpUri([StringSyntax(StringSyntaxAttribute.Uri)] string source, string? title = null, bool dumpQrCode = false)
     {
         if (string.IsNullOrWhiteSpace(source))
         {
@@ -71,7 +71,10 @@ public partial class Runnable
         }
         else if (Uri.TryCreate(source, UriKind.RelativeOrAbsolute, out var uri))
         {
-            return Dump(uri, title);
+            Dump(uri, title);
+            if (dumpQrCode)
+                DumpUriAsQrCode(source);
+            return uri;
         }
         else
         {

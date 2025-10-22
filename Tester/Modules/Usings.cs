@@ -12,6 +12,8 @@ internal class Usings(DemoRunner demo) : Runnable(demo, order: 4, group: "Featur
 {
     public unsafe override void Run()
     {
+        DumpUri("https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-10/libraries#serialization", dumpQrCode: true);
+
         DumpRegex("^(\\d{4})-(\\d{2})-(\\d{2})$", "Date");
 
         Dump(XElement.Parse("""            

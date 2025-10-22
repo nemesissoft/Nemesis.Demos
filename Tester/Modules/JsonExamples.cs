@@ -27,13 +27,6 @@ internal partial class JsonExamples(DemoRunner demo) : Runnable(demo, order: 102
         await JsonNodeMultiAsync();
     }
 
-    private void HighlightJson(string json, string? prepend = null)
-    {
-        if (prepend is not null)
-            AnsiConsole.Write(prepend);
-        HighlightJson(json);
-    }
-
     private void Required()
     {
         Dump(JsonSerializer.Deserialize("""{"Name" : "Mike", "Age" : 39 }""", MyContext.Default.Person));
@@ -175,10 +168,14 @@ internal partial class JsonExamples(DemoRunner demo) : Runnable(demo, order: 102
 
     private void NewTypesSupport()
     {
-        HighlightJson(JsonSerializer.Serialize(new object[] { Half.MaxValue, Int128.MaxValue, UInt128.MaxValue }), "Numbers:"); //[65500,170141183460469231731687303715884105727,340282366920938463463374607431768211455]
+        AnsiConsole.WriteLine("Numbers:");
+        HighlightJson(JsonSerializer.Serialize(new object[] { Half.MaxValue, Int128.MaxValue, UInt128.MaxValue })); //[65500,170141183460469231731687303715884105727,340282366920938463463374607431768211455]
 
-        HighlightJson(JsonSerializer.Serialize<ReadOnlyMemory<byte>>(new byte[] { 1, 2, 3, 4, 5 }), "Base64: "); // "AQIDBAU="
-        HighlightJson(JsonSerializer.Serialize<ReadOnlyMemory<int>>(new int[] { 1, 2, 3 }), "Numbers: "); // [1,2,3]
+        AnsiConsole.WriteLine("Base64: ");
+        HighlightJson(JsonSerializer.Serialize<ReadOnlyMemory<byte>>(new byte[] { 1, 2, 3, 4, 5 })); // "AQIDBAU="
+
+        AnsiConsole.WriteLine("Numbers: ");
+        HighlightJson(JsonSerializer.Serialize<ReadOnlyMemory<int>>(new int[] { 1, 2, 3 })); // [1,2,3]
     }
 
 
@@ -221,10 +218,12 @@ internal partial class JsonExamples(DemoRunner demo) : Runnable(demo, order: 102
     private void NewsInJsonNode()
     {
         var node = JsonNode.Parse("""{"Name" : "Mike", "Age" : 39, "Prop" : { "NestedProp" : 42 } }""")!;
-        HighlightJson(node.ToJsonString(), "Original:\n");
+        AnsiConsole.WriteLine("Original:");
+        HighlightJson(node.ToJsonString());
 
         var other = node.DeepClone();
-        HighlightJson(other.ToJsonString(), "Cloned:\n");
+        AnsiConsole.WriteLine("Cloned:");
+        HighlightJson(other.ToJsonString());
 
         Dump(JsonNode.DeepEquals(node, other), "Are same");
 
