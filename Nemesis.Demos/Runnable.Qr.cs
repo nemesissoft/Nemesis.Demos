@@ -25,7 +25,7 @@ public partial class Runnable
                 var qrCodeFile = QrHelpers.GetTempPngPathFromUrl(urlToEncode);
                 qrCodeImage.Save(qrCodeFile);
 
-                var qrPanel = new Panel(new Markup(qrMarkup))
+                var qrPanel = new Panel(new Markup(qrMarkup + $"\n[link={Markup.Escape(new Uri(Path.GetFullPath(qrCodeFile)).AbsoluteUri)}]Click here to show saved QR code[/]"))
                 {
                     Header = new PanelHeader("Scan Me", Justify.Center),
                     Border = BoxBorder.Rounded,
@@ -33,8 +33,6 @@ public partial class Runnable
                 };
 
                 AnsiConsole.Write(qrPanel);
-
-                AnsiConsole.MarkupLineInterpolated($"This QR is saved as:\n[blue underline]{Markup.Escape(new Uri(Path.GetFullPath(qrCodeFile)).AbsoluteUri)}[/]");
             }
             else
             {

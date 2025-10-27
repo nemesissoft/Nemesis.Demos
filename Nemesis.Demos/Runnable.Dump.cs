@@ -273,7 +273,12 @@ public partial class Runnable
             return new Text("[]");
         if (obj.GetType().GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>)) is { } @interface &&
             @interface.GetGenericArguments()[0] is { } t &&
-            (t == typeof(string) || t == typeof(char) || t == typeof(bool) || typeof(INumber<>).MakeGenericType(t).IsAssignableFrom(t))
+            (
+                t == typeof(string) ||
+                t == typeof(char) ||
+                t == typeof(bool) ||
+                t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(INumber<>))
+            )
         )
         {
             var renderedElements = ((IEnumerable)obj).Cast<object>().Select(o => ToRenderable(o)).ToList();
