@@ -137,6 +137,15 @@ public partial class Runnable
         if (obj is Exception exception)
             return ExceptionExtensions.GetRenderable(exception, ExceptionFormats.ShortenEverything | ExceptionFormats.ShowLinks);
 
+        if (obj is string text)
+            return new Markup($"[{theme.String}]\"{Markup.Escape(text)}\"[/]");
+
+        if (obj is char c)
+            return new Markup($"[{theme.String}]'{Markup.Escape(c.ToString())}'[/]");
+
+        if (obj is bool b)
+            return new Markup($"[{theme.Keyword}]{(b ? "true" : "false")}[/]");
+
         static Markup GetFormattableMarkup(IFormattable formattable, string? format, string? style = null) =>
             new(
                 (style is null ? "" : $"[{style}]") +
@@ -167,15 +176,6 @@ public partial class Runnable
             };
 
         // Primitive / simple
-        if (obj is string text)
-            return new Markup($"[{theme.String}]\"{Markup.Escape(text)}\"[/]");
-
-        if (obj is char c)
-            return new Markup($"[{theme.String}]'{Markup.Escape(c.ToString())}'[/]");
-
-        if (obj is bool b)
-            return new Markup($"[{theme.Keyword}]{(b ? "true" : "false")}[/]");
-
         if (obj is byte or sbyte or
                    short or ushort or
                    int or uint or
@@ -191,6 +191,16 @@ public partial class Runnable
 
 
         var type = obj.GetType();
+
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>) && IsSimpleType(type.GenericTypeArguments[0]))
+        {
+            return new Columns(
+                ToRenderable(type.GetProperty("Key")!.GetValue(obj)),
+                new Text(":"),
+                ToRenderable(type.GetProperty("Value")!.GetValue(obj))
+                )
+            { Expand = false };
+        }
 
         // Enums
         if (type.IsEnum)
@@ -317,11 +327,7 @@ public partial class Runnable
                 : type.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(p => p.CanRead)
             ).ToArray();
 
-        var objectTable = new Table()
-        {
-            Border = TableBorder.Rounded,
-            Title = new TableTitle($"[{theme.PlainText}]{type.Name}[/]")
-        }
+        var objectTable = new Table() { Border = TableBorder.Rounded, Title = new TableTitle($"[{theme.PlainText}]{type.Name}[/]") }
             .AddColumns("Property", "Value");
         foreach (var m in members)
         {
@@ -343,6 +349,20 @@ public partial class Runnable
         }
         return objectTable;
     }
+
+    private static bool IsSimpleType(Type type) =>
+        type == typeof(byte) || type == typeof(sbyte) ||
+        type == typeof(short) || type == typeof(ushort) ||
+        type == typeof(int) || type == typeof(uint) ||
+        type == typeof(long) || type == typeof(ulong) ||
+        type == typeof(nint) || type == typeof(nuint) ||
+        type == typeof(Half) || type == typeof(float) ||
+        type == typeof(double) || type == typeof(decimal) ||
+        type == typeof(Int128) || type == typeof(UInt128) ||
+        type == typeof(string) || type == typeof(char) ||
+        type == typeof(bool) ||
+        type == typeof(DateTime) || type == typeof(DateTimeOffset) || type == typeof(DateOnly) || type == typeof(TimeOnly) || type == typeof(TimeSpan) ||
+        type == typeof(Uri) || type == typeof(FileSystemInfo);
 }
 
 public interface IValueWrapper
