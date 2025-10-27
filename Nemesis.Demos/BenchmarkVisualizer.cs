@@ -34,7 +34,7 @@ public static class BenchmarkVisualizer
             return list;
 
         var header = headerLine.Split(options.Separator);
-        int methodIdx = FindIndex("Method"), meanIdx = FindIndex("Mean"), ratioIdx = FindIndex("Ratio"), gen0Idx = FindIndex("Gen0"), allocIdx = FindIndex("Allocated");
+        int methodIdx = FindIndex("Method"), jobIdx = FindIndex("Job"), meanIdx = FindIndex("Mean"), ratioIdx = FindIndex("Ratio"), gen0Idx = FindIndex("Gen0"), allocIdx = FindIndex("Allocated");
 
         int FindIndex(string columnName) =>
             Array.FindIndex(header, h => string.Equals(h, columnName, StringComparison.OrdinalIgnoreCase));
@@ -53,7 +53,7 @@ public static class BenchmarkVisualizer
 
             list.Add(new BenchmarkResult
             {
-                Method = TrimRecursive(parts[methodIdx]),
+                Method = (jobIdx >= 0 && TrimRecursive(parts[jobIdx]) is { } job && !string.IsNullOrWhiteSpace(job) ? $"{job} \\ " : "") + TrimRecursive(parts[methodIdx]),
                 Mean = meanValue,
                 OriginalUnit = unit,
                 Ratio = ratioIdx >= 0 ? TrimRecursive(parts[ratioIdx]) : "",
@@ -132,7 +132,13 @@ public static class BenchmarkVisualizer
     static void RenderTable(IEnumerable<BenchmarkResult> results)
     {
         var table = new Table().Border(TableBorder.Rounded).Title("[bold blue]📋 Benchmark Summary[/]")
-            .AddColumns("[bold]Method[/]", "[bold]Mean (ns)[/]", "[bold]Ratio[/]", "[bold]Gen0[/]", "[bold]Allocated[/]");
+            .AddColumns(
+            new TableColumn("[bold]Method[/]"),
+            new TableColumn("[bold]Mean (ns)[/]").RightAligned(),
+            new TableColumn("[bold]Ratio[/]").RightAligned(),
+            new TableColumn("[bold]Gen0[/]").RightAligned(),
+            new TableColumn("[bold]Allocated[/]").RightAligned()
+            );
 
         bool hasBaseline = results.Any(r => r.Ratio.Contains("baseline", StringComparison.OrdinalIgnoreCase));
 
