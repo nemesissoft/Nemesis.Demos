@@ -16,9 +16,6 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
 
     public virtual Task RunAsync() { return Task.CompletedTask; }
 
-    public static IDisposable ForeColor(Color color) => new ConsoleColors.ForeColorStruct(color);
-
-    public static IDisposable BackColor(Color color) => new ConsoleColors.BackColorStruct(color);
 
     /// <summary>
     /// Adds a horizontal rule line.

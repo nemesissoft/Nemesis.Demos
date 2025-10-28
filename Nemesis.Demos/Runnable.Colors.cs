@@ -1,10 +1,14 @@
 ﻿using Spectre.Console;
 
-namespace Nemesis.Demos.Internals;
+namespace Nemesis.Demos;
 
-internal static class ConsoleColors
+public partial class Runnable
 {
-    internal readonly struct ForeColorStruct : IDisposable
+    public static IDisposable ForeColor(Color color) => new ForeColorStruct(color);
+
+    public static IDisposable BackColor(Color color) => new BackColorStruct(color);
+
+    readonly struct ForeColorStruct : IDisposable
     {
         private readonly Color _previousColor;
 
@@ -17,7 +21,7 @@ internal static class ConsoleColors
         public void Dispose() => AnsiConsole.Foreground = _previousColor;
     }
 
-    internal readonly struct BackColorStruct : IDisposable
+    readonly struct BackColorStruct : IDisposable
     {
         private readonly Color _previousColor;
 

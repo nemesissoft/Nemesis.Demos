@@ -49,5 +49,5 @@
 	<ItemGroup>
 		<EmbeddedResource Include="Fonts\**\*.*" />
 	</ItemGroup>
-
+	
 </Project>
