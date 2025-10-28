@@ -63,7 +63,7 @@ public partial class DemoRunner
 
         var prompt =
             new SelectionPrompt<Runnable>()
-                .PageSize(40)
+                .PageSize(60)
                 .WrapAround(true)
                 .UseConverter(s => s.Description)
                 .EnableSearch()
