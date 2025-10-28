@@ -46,10 +46,11 @@ public abstract partial class Runnable(DemoRunner demo, string? group = null, in
                 .LeftJustified()
     );
 
-
+    [DebuggerNonUserCode]
     public static void ExpectFailure<TException>(Action action, string? errorMessagePartOrPattern = null, [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
         => ExpectFailureAsync<TException>(() => { action(); return Task.CompletedTask; }, errorMessagePartOrPattern, actionText).GetAwaiter().GetResult();
 
+    [DebuggerNonUserCode]
     public static async Task ExpectFailureAsync<TException>(Func<Task> action, string? errorMessagePartOrPattern = null, [CallerArgumentExpression(nameof(action))] string? actionText = null) where TException : Exception
     {
         actionText ??= "<no action>";

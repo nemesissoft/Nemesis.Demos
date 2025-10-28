@@ -53,7 +53,8 @@ public static class BenchmarkVisualizer
 
             list.Add(new BenchmarkResult
             {
-                Method = (jobIdx >= 0 && TrimRecursive(parts[jobIdx]) is { } job && !string.IsNullOrWhiteSpace(job) ? $"{job} \\ " : "") + TrimRecursive(parts[methodIdx]),
+                Method = TrimRecursive(parts[methodIdx]),
+                Job = jobIdx >= 0 ? TrimRecursive(parts[jobIdx]) : "",
                 Mean = meanValue,
                 OriginalUnit = unit,
                 Ratio = ratioIdx >= 0 ? TrimRecursive(parts[ratioIdx]) : "",
@@ -129,7 +130,7 @@ public static class BenchmarkVisualizer
         return value * (factor / toFactor);
     }
 
-    static void RenderTable(IEnumerable<BenchmarkResult> results)
+    static void RenderTable(IList<BenchmarkResult> results)
     {
         var table = new Table().Border(TableBorder.Rounded).Title("[bold blue]📋 Benchmark Summary[/]")
             .AddColumns(
@@ -142,6 +143,10 @@ public static class BenchmarkVisualizer
 
         bool hasBaseline = results.Any(r => r.Ratio.Contains("baseline", StringComparison.OrdinalIgnoreCase));
 
+        bool shouldAddJob =
+            results.Select(r => r.Job).Distinct().Count() >= 2 &&
+            results.Any(r => !r.Job.StartsWith("Default", StringComparison.OrdinalIgnoreCase));
+
         foreach (var r in results)
         {
             var ratioColor = hasBaseline ?
@@ -153,8 +158,10 @@ public static class BenchmarkVisualizer
                     _ => "red"
                 } : "grey";
 
+            var methodName = (shouldAddJob ? $"{r.Job} \\ " : "") + r.Method;
+
             table.AddRow(
-                $"[cyan]{r.Method}[/]",
+                $"[cyan]{methodName}[/]",
                 r.Mean.ToString("N2", CultureInfo.InvariantCulture),
                 $"[{ratioColor}]{r.Ratio}[/]",
                 r.Gen0,
@@ -203,7 +210,7 @@ public static class BenchmarkVisualizer
                 _ => "🔴"
             };
 
-            chart.AddItem($"{emoji} {r.Method}", (float)r.Mean, color);
+            chart.AddItem($"{emoji} {(r.Job + "\\" + r.Method)}", (float)r.Mean, color);
         }
 
         AnsiConsole.Write(chart);
@@ -212,6 +219,7 @@ public static class BenchmarkVisualizer
     private sealed class BenchmarkResult
     {
         public string Method { get; set; } = "";
+        public string Job { get; set; } = "";
         public double Mean { get; set; }
         public string OriginalUnit { get; set; } = "ns";
         public string Ratio { get; set; } = "";
